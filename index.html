@@ -1189,15 +1189,36 @@ async function sendToSheetDB(rowData) {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(rowData)) params.append(k, v ?? '');
 
-  // Use JSONP pattern: inject a <script> tag that calls a global callback
-  // This bypasses CORS entirely and returns the real response from Apps Script
+  // Strategy: try a direct fetch first (works when app is on HTTPS like GitHub Pages)
+  // Apps Script allows CORS when the request comes from a trusted origin
+  try {
+    const res = await fetch(url + '?' + params.toString(), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const text = await res.text();
+    // Strip JSONP wrapper if present: callback({...}) -> {...}
+    const clean = text.replace(/^[^(]+\(/, '').replace(/\)\s*;?\s*$/, '').trim();
+    const json = JSON.parse(clean);
+    if (json.status === 'ok') return json;
+    if (json.status === 'error') throw new Error(json.msg || 'Error del servidor');
+    throw new Error('Respuesta inesperada: ' + text.slice(0, 80));
+  } catch (fetchErr) {
+    // If fetch failed due to CORS (TypeError), fall back to JSONP
+    if (!(fetchErr instanceof TypeError) && fetchErr.message !== 'Failed to fetch') {
+      // It was a real error (DUPLICATE, etc.), re-throw it
+      throw fetchErr;
+    }
+  }
+
+  // Fallback: JSONP via <script> tag (no CORS restrictions)
   return new Promise((resolve, reject) => {
     const cbName = '__fsCb_' + Date.now();
     const script = document.createElement('script');
     const timer = setTimeout(() => {
       cleanup();
-      reject(new Error('Timeout — la petición tardó más de 10 segundos'));
-    }, 10000);
+      reject(new Error('Timeout — Apps Script no respondió en 12 segundos. Comprueba la URL en ⚙ Configuración.'));
+    }, 12000);
 
     function cleanup() {
       clearTimeout(timer);
@@ -1207,28 +1228,55 @@ async function sendToSheetDB(rowData) {
 
     window[cbName] = function(response) {
       cleanup();
-      if (response && response.status === 'ok') resolve(response);
-      else reject(new Error(response ? response.msg : 'Respuesta vacía'));
+      if (response && response.status === 'ok') {
+        resolve(response);
+      } else {
+        const msg = (response && response.msg) ? response.msg : 'Respuesta vacía del servidor';
+        reject(new Error(msg));
+      }
     };
 
-    params.append('callback', cbName);
-    script.src = url + '?' + params.toString();
-    script.onerror = () => { cleanup(); reject(new Error('Error de red al conectar con Apps Script')); };
+    const jsonpParams = new URLSearchParams(params);
+    jsonpParams.set('callback', cbName);
+    script.src = url + '?' + jsonpParams.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('No se pudo conectar con Apps Script. Verifica que la URL es correcta y el script está publicado.'));
+    };
     document.head.appendChild(script);
   });
 }
 
+
 async function testConnection() {
   const url = getUrl();
-  if (!url) { setStatus('testStatus', '⚠ Primero guarda la URL de SheetDB', 'err'); return; }
+  if (!url) { setStatus('testStatus', '⚠ Primero guarda la URL de Apps Script', 'err'); return; }
   setStatus('testStatus', '⏳ Probando conexión...', 'info');
+
+  const testRow = {
+    fecha_escaneo: new Date().toLocaleString('es-ES'),
+    proveedor: 'TEST-CONEXION', nif_proveedor: '',
+    numero_factura: 'TEST-0000', fecha: '',
+    cliente: '', nif_cliente: '', concepto: 'Prueba de conexión',
+    base_imponible: '0', tipo_impuesto: 'IGIC', porcentaje_impuesto: '0',
+    cuota_impuesto: '0', total: '0', moneda: 'EUR',
+    forma_pago: '', observaciones: 'Borrar esta fila', tipo_contable: 'EXENTA'
+  };
+
   try {
-    const rowData = { fecha_escaneo: new Date().toLocaleString('es-ES'), proveedor: 'TEST - Conexión FacturaScan', nif_proveedor: '', numero_factura: 'TEST-001', fecha: '', cliente: '', nif_cliente: '', concepto: 'Prueba de conexión', base_imponible: '0', tipo_impuesto: 'IGIC', porcentaje_impuesto: '7', cuota_impuesto: '0', total: '0', moneda: 'EUR', forma_pago: '', observaciones: 'Borrar esta fila' };
-    await sendToSheetDB(rowData);
-    setStatus('testStatus', '✓ ¡Enviado! Revisa tu Sheets en unos segundos — debería aparecer una fila de prueba.', 'ok');
+    await sendToSheetDB(testRow);
+    setStatus('testStatus', '✓ ¡Conexión correcta! Aparecerá una fila TEST en tu Sheets que puedes borrar.', 'ok');
     updateSheetsIndicator();
-  } catch (e) { setStatus('testStatus', '⚠ Error: ' + e.message, 'err'); }
+  } catch(e) {
+    if (e.message === 'DUPLICATE') {
+      setStatus('testStatus', '✓ Conexión correcta (la fila de prueba ya existía en Sheets).', 'ok');
+      updateSheetsIndicator();
+    } else {
+      setStatus('testStatus', '⚠ Error: ' + e.message, 'err');
+    }
+  }
 }
+
 
 // ── FILE ──
 document.getElementById('fileInput').addEventListener('change', (e) => {
@@ -1539,9 +1587,19 @@ async function confirmSave() {
     if (e.message === 'DUPLICATE') {
       statusEl.innerHTML = '⚠️ <strong>Esta factura ya está registrada en tu contabilidad.</strong> No se ha guardado para evitar duplicados.';
       statusEl.style.color = 'var(--accent2)';
+      statusEl.style.padding = '0.6rem 0.75rem';
+      statusEl.style.background = 'rgba(240,200,96,0.1)';
+      statusEl.style.border = '1px solid rgba(240,200,96,0.3)';
+      statusEl.style.borderRadius = '6px';
+      statusEl.style.marginTop = '0.5rem';
+      statusEl.style.display = 'block';
     } else {
       statusEl.textContent = '⚠ Error al guardar: ' + e.message;
       statusEl.style.color = 'var(--danger)';
+      statusEl.style.padding = '';
+      statusEl.style.background = '';
+      statusEl.style.border = '';
+      statusEl.style.borderRadius = '';
     }
   }
 }
@@ -1596,14 +1654,29 @@ function download(name, content, type) {
 }
 
 function resetAll() {
-  currentData = null; currentImageB64 = null;
-  document.getElementById('fileInput').value = '';
+  currentData = null;
+  currentImageB64 = null;
+
+  // Replace file input with a fresh clone so 'change' fires even for same file
+  const oldInput = document.getElementById('fileInput');
+  const newInput = oldInput.cloneNode(true);
+  newInput.value = '';
+  oldInput.parentNode.replaceChild(newInput, oldInput);
+  newInput.addEventListener('change', (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
   document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('previewImg').src = '';
+  document.getElementById('fileName').textContent = '—';
   document.getElementById('btnScan').style.display = 'none';
+  document.getElementById('btnScan').disabled = false;
   document.getElementById('results').style.display = 'none';
   document.getElementById('actionBar').style.display = 'none';
   document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
   document.getElementById('btnSheets').style.background = '';
+  document.getElementById('btnSheets').disabled = false;
+  document.getElementById('sheetsSaveStatus').textContent = '';
+  document.getElementById('validationWarning').style.display = 'none';
+  document.querySelectorAll('.field-value.error').forEach(el => el.classList.remove('error'));
   hide('loading'); hide('errorBox');
 }
 
