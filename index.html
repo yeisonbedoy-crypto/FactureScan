@@ -839,6 +839,155 @@
     [contenteditable="true"] { font-size: 0.88rem !important; }
     .field-value.highlight[contenteditable="true"] { font-size: 1.2rem !important; }
   }
+
+  /* ── BATCH PROCESSING ── */
+  .batch-queue {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .batch-queue-header {
+    padding: 0.85rem 1.25rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .batch-queue-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+
+  .batch-file-list { padding: 0.75rem 1.25rem; display: grid; gap: 0.4rem; }
+  .batch-file-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 5px;
+    background: var(--surface2);
+    font-size: 0.7rem;
+    color: var(--muted);
+    transition: background 0.15s;
+  }
+  .batch-file-name { flex: 1; truncate; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .batch-file-status { font-size: 0.62rem; white-space: nowrap; }
+  .batch-file-status.pending  { color: var(--muted); }
+  .batch-file-status.scanning { color: var(--accent2); }
+  .batch-file-status.done     { color: var(--success); }
+  .batch-file-status.error    { color: var(--danger); }
+  .batch-file-status.duplicate { color: var(--accent2); }
+
+  /* Progress bar */
+  .progress-wrap {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .progress-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .progress-track {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* Batch summary table */
+  #batchSummary {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .summary-header {
+    padding: 1rem 1.25rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .summary-title { font-family: 'Fraunces', serif; font-size: 1rem; color: var(--accent); }
+  .summary-stats { font-size: 0.65rem; color: var(--muted); display: flex; gap: 1rem; }
+  .summary-stat-val { color: var(--text); font-weight: 500; }
+
+  .summary-table { width: 100%; border-collapse: collapse; }
+  .summary-table th {
+    padding: 0.6rem 1rem;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .summary-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .summary-table tr.clickable { cursor: pointer; transition: background 0.12s; }
+  .summary-table tr.clickable:hover { background: var(--surface2); }
+  .summary-table tr.selected { background: rgba(200,240,96,0.07); }
+  .summary-table tr.selected td { color: var(--accent); }
+
+  .status-icon { font-size: 1rem; }
+  .total-cell { font-family: 'Fraunces', serif; color: var(--accent); }
+  .type-badge {
+    font-size: 0.58rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid;
+  }
+  .type-iva { background: rgba(200,240,96,0.1); color: var(--accent); border-color: rgba(200,240,96,0.3); }
+  .type-exenta { background: rgba(240,200,96,0.1); color: var(--accent2); border-color: rgba(240,200,96,0.3); }
+  .type-error { background: rgba(240,96,96,0.1); color: var(--danger); border-color: rgba(240,96,96,0.3); }
+
+  /* Save all button */
+  .btn-save-all {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--sheets-bg);
+    border: 1px solid var(--sheets-border);
+    color: #5dca7a;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    display: none;
+  }
+  .btn-save-all:hover { background: rgba(52,168,83,0.2); }
+  .btn-save-all:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @media (max-width: 600px) {
+    .summary-table td, .summary-table th { padding: 0.6rem 0.75rem; font-size: 0.68rem; }
+    .summary-stats { flex-direction: column; gap: 0.3rem; }
+  }
 </style>
 </head>
 <body>
@@ -891,8 +1040,60 @@
       <span class="upload-icon">📄</span>
       <div class="upload-title">Sube tu factura</div>
       <div class="upload-sub">Arrastra aquí o haz clic para seleccionar<br>JPG · PNG · WEBP</div>
-      <input type="file" id="fileInput" accept="image/*" />
+      <input type="file" id="fileInput" accept="image/*" multiple />
     </div>
+
+
+    <!-- Batch Queue -->
+    <div class="batch-queue" id="batchQueue">
+      <div class="batch-queue-header">
+        <div class="batch-queue-title">Cola de procesamiento</div>
+        <div id="batchQueueCount" style="font-size:0.65rem;color:var(--accent);"></div>
+      </div>
+      <div class="batch-file-list" id="batchFileList"></div>
+      <div class="progress-wrap" id="progressWrap" style="display:none;">
+        <div class="progress-label">
+          <span id="progressLabel">Preparando...</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Summary -->
+    <div id="batchSummary">
+      <div class="summary-header">
+        <div class="summary-title">Resumen del lote</div>
+        <div class="summary-stats">
+          <span>✓ <span class="summary-stat-val" id="statOk">0</span> ok</span>
+          <span>⚠ <span class="summary-stat-val" id="statDup">0</span> duplicadas</span>
+          <span>✕ <span class="summary-stat-val" id="statErr">0</span> errores</span>
+          <span>Σ <span class="summary-stat-val" id="statTotal">0.00 €</span></span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Proveedor</th>
+              <th>Nº Factura</th>
+              <th>Fecha</th>
+              <th>Total</th>
+              <th>Tipo</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Save all button -->
+    <button class="btn-save-all" id="btnSaveAll" onclick="saveAllToSheets()">
+      📊 Guardar todo en Sheets
+    </button>
 
     <!-- Preview -->
     <div class="preview-area" id="previewArea">
@@ -1400,7 +1601,13 @@ async function testConnection() {
 
 // ── FILE ──
 document.getElementById('fileInput').addEventListener('change', (e) => {
-  if (e.target.files[0]) loadFile(e.target.files[0]);
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  if (files.length === 1) {
+    loadFile(files[0]);
+  } else {
+    loadBatch(files);
+  }
 });
 
 const zone = document.getElementById('uploadZone');
@@ -1408,7 +1615,10 @@ zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.ad
 zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
 zone.addEventListener('drop', (e) => {
   e.preventDefault(); zone.classList.remove('dragover');
-  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (!files.length) return;
+  if (files.length === 1) loadFile(files[0]);
+  else loadBatch(files);
 });
 
 function loadFile(file) {
@@ -1422,9 +1632,282 @@ function loadFile(file) {
     document.getElementById('btnScan').style.display = 'block';
     document.getElementById('results').style.display = 'none';
     document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('batchSummary').style.display = 'none';
+    document.getElementById('btnSaveAll').style.display = 'none';
     hide('errorBox');
   };
   reader.readAsDataURL(file);
+}
+
+// ── BATCH STATE ──
+let batchQueue    = [];   // [{file, name, b64, status, data, error}]
+let batchResults  = [];   // processed results
+let selectedBatchIdx = -1;
+
+function fileToB64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = e => res(e.target.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Error leyendo archivo'));
+    r.readAsDataURL(file);
+  });
+}
+
+function loadBatch(files) {
+  const MAX = 10;
+  if (files.length > MAX) {
+    showError(`⚠ Máximo ${MAX} facturas por lote. Se procesarán las primeras ${MAX}.`);
+    files = files.slice(0, MAX);
+  }
+
+  // Reset UI
+  resetAll();
+  batchQueue   = files.map(f => ({ file: f, name: f.name, b64: null, status: 'pending', data: null, error: null }));
+  batchResults = [];
+  selectedBatchIdx = -1;
+
+  // Hide single-invoice UI, show batch queue
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('batchQueue').style.display = 'block';
+  document.getElementById('batchQueueCount').textContent = `${files.length} archivo${files.length > 1 ? 's' : ''}`;
+
+  // Render file list
+  renderBatchList();
+
+  // Show process button
+  document.getElementById('btnScan').textContent = `⚡ Analizar ${files.length} facturas`;
+  document.getElementById('btnScan').style.display = 'block';
+  document.getElementById('btnScan').onclick = processBatch;
+}
+
+function renderBatchList() {
+  const list = document.getElementById('batchFileList');
+  list.innerHTML = batchQueue.map((item, i) => {
+    const icons   = { pending: '○', scanning: '◌', done: '✓', error: '✕', duplicate: '⚠' };
+    const classes = { pending: 'pending', scanning: 'scanning', done: 'done', error: 'error', duplicate: 'duplicate' };
+    return `<div class="batch-file-item" id="bfi-${i}">
+      <span class="batch-file-name">${item.name}</span>
+      <span class="batch-file-status ${classes[item.status]}" id="bfs-${i}">${icons[item.status]} ${item.status === 'pending' ? 'Pendiente' : item.status === 'scanning' ? 'Escaneando...' : item.status === 'done' ? 'Listo' : item.status === 'duplicate' ? 'Duplicado' : item.error || 'Error'}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateBatchItem(i, status, extra) {
+  const icons   = { pending:'○', scanning:'◌', done:'✓', error:'✕', duplicate:'⚠' };
+  const labels  = { pending:'Pendiente', scanning:'Escaneando...', done:'Listo', duplicate:'Duplicado' };
+  const el      = document.getElementById('bfs-' + i);
+  if (!el) return;
+  el.className  = 'batch-file-status ' + status;
+  el.textContent = icons[status] + ' ' + (labels[status] || extra || status);
+  batchQueue[i].status = status;
+}
+
+async function scanSingleImage(b64, key) {
+  const resized = await resizeImage(b64);
+  // Concise prompt optimized for batch — minimal tokens
+  const prompt = `JSON solo, sin markdown. Estructura exacta:
+{"proveedor":"","nif_proveedor":"","numero_factura":"solo código alfanumérico, sin palabras como Factura/Original/Copia","fecha":"DD/MM/YYYY","cliente":"","nif_cliente":"","concepto":"","base_imponible":"2dec","tipo_impuesto":"IVA|IGIC","porcentaje_impuesto":"num","cuota_impuesto":"2dec","total":"2dec","moneda":"EUR","forma_pago":"","observaciones":null,"tipo_contable":"IVA/IGIC|EXENTA"}
+EXENTA si impuesto=0% o exención explícita. Null si no aparece. Sin símbolo moneda.`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 512,
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: resized } },
+        { type: 'text', text: prompt }
+      ]}]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  const raw   = data.content[0].text.trim();
+  const clean = raw.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+  const match = clean.match(/\{[\s\S]*\}/);
+  return JSON.parse(match ? match[0] : clean);
+}
+
+async function processBatch() {
+  const key = getKey();
+  if (!key) { showError('⚠ Introduce tu clave API primero.'); return; }
+
+  document.getElementById('btnScan').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  batchResults = [];
+
+  for (let i = 0; i < batchQueue.length; i++) {
+    const item = batchQueue[i];
+    updateBatchItem(i, 'scanning');
+    setProgress(i, batchQueue.length, item.name);
+
+    try {
+      if (!item.b64) item.b64 = await fileToB64(item.file);
+      const parsed = await scanSingleImage(item.b64, key);
+      item.data   = parsed;
+      item.status = 'done';
+      updateBatchItem(i, 'done');
+      batchResults.push({ idx: i, data: parsed, status: 'done' });
+    } catch(e) {
+      item.error  = e.message.slice(0, 40);
+      item.status = 'error';
+      updateBatchItem(i, 'error', item.error);
+      batchResults.push({ idx: i, data: null, status: 'error', error: item.error });
+    }
+
+    // Persist progress to sessionStorage
+    sessionStorage.setItem('factura_batch', JSON.stringify(batchResults));
+    setProgress(i + 1, batchQueue.length, '');
+  }
+
+  setProgress(batchQueue.length, batchQueue.length, '');
+  document.getElementById('progressLabel').textContent = '✓ Procesamiento completado';
+  renderBatchSummary();
+}
+
+function setProgress(done, total, name) {
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  if (name) document.getElementById('progressLabel').textContent = `Procesando ${done + 1} de ${total}: ${name.slice(0, 30)}`;
+}
+
+function renderBatchSummary() {
+  document.getElementById('batchSummary').style.display = 'block';
+  document.getElementById('btnSaveAll').style.display = 'block';
+
+  let okCount = 0, dupCount = 0, errCount = 0, totalSum = 0;
+  const tbody = document.getElementById('summaryTableBody');
+  tbody.innerHTML = '';
+
+  batchResults.forEach((r, i) => {
+    const d    = r.data;
+    const isOk = r.status === 'done' && d;
+
+    if (isOk) {
+      okCount++;
+      totalSum += parseFloat(d.total || 0) || 0;
+    } else if (r.status === 'duplicate') {
+      dupCount++;
+    } else {
+      errCount++;
+    }
+
+    const icon      = isOk ? '✓' : r.status === 'duplicate' ? '⚠' : '✕';
+    const typeClass = !d ? 'type-error' : d.tipo_contable === 'EXENTA' ? 'type-exenta' : 'type-iva';
+    const typeLabel = !d ? 'Error' : (d.tipo_contable || '—');
+    const tr        = document.createElement('tr');
+    tr.className    = 'clickable';
+    tr.dataset.idx  = i;
+    tr.innerHTML    = `
+      <td><span class="status-icon">${icon}</span></td>
+      <td title="${d ? (d.proveedor||'') : ''}">${d ? (d.proveedor||'—').slice(0,20) : 'Error'}</td>
+      <td>${d ? (d.numero_factura||'—') : '—'}</td>
+      <td>${d ? (d.fecha||'—') : '—'}</td>
+      <td class="total-cell">${d && d.total ? parseFloat(d.total).toFixed(2)+' €' : '—'}</td>
+      <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+    `;
+    tr.onclick = () => selectBatchRow(i, tr);
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('statOk').textContent    = okCount;
+  document.getElementById('statDup').textContent   = dupCount;
+  document.getElementById('statErr').textContent   = errCount;
+  document.getElementById('statTotal').textContent = totalSum.toFixed(2) + ' €';
+}
+
+function selectBatchRow(i, tr) {
+  // Deselect previous
+  document.querySelectorAll('#summaryTableBody tr').forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+  selectedBatchIdx = i;
+
+  const r = batchResults[i];
+  if (!r || !r.data) return;
+
+  // Load data into editable fields grid
+  currentData = r.data;
+  renderResults(r.data);
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Update save button to save this specific invoice
+  document.getElementById('actionBar').style.display = 'flex';
+  document.getElementById('sheetsSaveStatus').textContent = '';
+}
+
+async function saveAllToSheets() {
+  const url = getUrl();
+  if (!url) { alert('Configura la URL de Google Sheets primero en ⚙ Configuración'); return; }
+
+  const btn = document.getElementById('btnSaveAll');
+  btn.disabled = true;
+
+  let saved = 0, dupes = 0, errors = 0;
+
+  for (let i = 0; i < batchResults.length; i++) {
+    const r = batchResults[i];
+    if (!r.data || r.status === 'duplicate') { if (r.status === 'duplicate') dupes++; continue; }
+
+    // Update row status visually
+    const rows = document.querySelectorAll('#summaryTableBody tr');
+    if (rows[i]) rows[i].style.opacity = '0.5';
+
+    btn.textContent = `📊 Guardando ${i+1} de ${batchResults.length}...`;
+
+    try {
+      const rowData = buildRowData(r.data);
+      await sendToSheetDB(rowData);
+      batchResults[i].status = 'saved';
+      if (rows[i]) { rows[i].style.opacity = '1'; rows[i].querySelector('.status-icon').textContent = '📊'; }
+      saved++;
+    } catch(e) {
+      if (e.message === 'DUPLICATE') {
+        batchResults[i].status = 'duplicate';
+        updateBatchItem(batchQueue[r.idx] ? r.idx : i, 'duplicate');
+        if (rows[i]) { rows[i].style.opacity = '1'; rows[i].querySelector('.status-icon').textContent = '⚠'; }
+        dupes++;
+      } else {
+        errors++;
+        if (rows[i]) { rows[i].style.opacity = '1'; }
+      }
+    }
+    // Small delay to avoid rate limiting
+    await new Promise(res => setTimeout(res, 300));
+  }
+
+  sessionStorage.removeItem('factura_batch');
+  btn.textContent = `✓ ${saved} guardadas · ${dupes} duplicadas · ${errors} errores`;
+  // Refresh stats
+  document.getElementById('statDup').textContent = dupes;
+}
+
+function buildRowData(d) {
+  return {
+    fecha_escaneo:       new Date().toLocaleString('es-ES'),
+    fecha:               d.fecha               || '',
+    numero_factura:      d.numero_factura      || '',
+    proveedor:           d.proveedor           || '',
+    nif_proveedor:       d.nif_proveedor       || '',
+    concepto:            d.concepto            || '',
+    base_imponible:      d.base_imponible      || '',
+    tipo_impuesto:       d.tipo_impuesto       || '',
+    porcentaje_impuesto: d.porcentaje_impuesto || '',
+    cuota_impuesto:      d.cuota_impuesto      || '',
+    total:               d.total               || '',
+    moneda:              d.moneda              || 'EUR',
+    tipo_contable:       d.tipo_contable       || '',
+    forma_pago:          d.forma_pago          || '',
+    cliente:             d.cliente             || '',
+    nif_cliente:         d.nif_cliente         || '',
+    observaciones:       d.observaciones       || ''
+  };
 }
 
 // ── SCAN ──
@@ -1808,8 +2291,19 @@ function resetAll() {
   hide('loading'); hide('errorBox');
   sessionStorage.removeItem('factura_currentData');
   sessionStorage.removeItem('factura_currentImage');
+  sessionStorage.removeItem('factura_batch');
   const notice = document.getElementById('restoreNotice');
   if (notice) notice.style.display = 'none';
+  // Reset batch UI
+  batchQueue = []; batchResults = []; selectedBatchIdx = -1;
+  document.getElementById('batchQueue').style.display = 'none';
+  document.getElementById('batchSummary').style.display = 'none';
+  document.getElementById('btnSaveAll').style.display = 'none';
+  document.getElementById('uploadZone').style.display = 'block';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('btnScan').textContent = '⚡ Analizar factura';
+  document.getElementById('btnScan').onclick = scanInvoice;
 }
 
 // ── UTILS ──
@@ -1834,6 +2328,22 @@ window.onload = () => {
   const url = getUrl();
   if (url) { document.getElementById('sheetsUrlInput').value = url; setStatus('urlStatus','✓ URL cargada','ok'); }
   updateSheetsIndicator();
+
+  // Restore batch session if interrupted
+  const savedBatch = sessionStorage.getItem('factura_batch');
+  if (savedBatch) {
+    try {
+      batchResults = JSON.parse(savedBatch);
+      if (batchResults.length > 0) {
+        document.getElementById('uploadZone').style.display = 'none';
+        document.getElementById('batchSummary').style.display = 'block';
+        document.getElementById('btnSaveAll').style.display = 'block';
+        renderBatchSummary();
+        const notice = document.getElementById('restoreNotice');
+        if (notice) { notice.style.display = 'flex'; notice.querySelector('span:nth-child(2)').textContent = `Lote restaurado — ${batchResults.length} facturas del procesamiento anterior.`; }
+      }
+    } catch(e) { sessionStorage.removeItem('factura_batch'); }
+  }
 
   // Restore scan session if user refreshed by accident
   const savedData  = sessionStorage.getItem('factura_currentData');
