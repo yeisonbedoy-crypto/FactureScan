@@ -1702,10 +1702,11 @@ function updateBatchItem(i, status, extra) {
 
 async function scanSingleImage(b64, key) {
   const resized = await resizeImage(b64);
-  // Concise prompt optimized for batch — minimal tokens
-  const prompt = `JSON solo, sin markdown. Estructura exacta:
-{"proveedor":"","nif_proveedor":"","numero_factura":"solo código alfanumérico, sin palabras como Factura/Original/Copia","fecha":"DD/MM/YYYY","cliente":"","nif_cliente":"","concepto":"","base_imponible":"2dec","tipo_impuesto":"IVA|IGIC","porcentaje_impuesto":"num","cuota_impuesto":"2dec","total":"2dec","moneda":"EUR","forma_pago":"","observaciones":null,"tipo_contable":"IVA/IGIC|EXENTA"}
-EXENTA si impuesto=0% o exención explícita. Null si no aparece. Sin símbolo moneda.`;
+  // Batch prompt — conciso con reglas de precision
+  const prompt = `SOLO JSON sin markdown.
+Reglas: (1) Copia importes impresos, nunca calcules. (2) Tipos mixtos: porcentaje_impuesto=tipo predominante o "Mixto"; cuota_impuesto=suma de todas las cuotas impresas. (3) Verifica Base+Cuota=Total; si no cuadra ajusta Base, el Total impreso es prioritario e inmutable. (4) EXENTA si impuesto=0% o exencion explicita.
+{"proveedor":"","nif_proveedor":"","numero_factura":"codigo alfanumerico sin palabras Factura/Original/Copia/Duplicado","fecha":"DD/MM/YYYY","cliente":"","nif_cliente":"","concepto":"","base_imponible":"2dec ajustada si necesario","tipo_impuesto":"IVA|IGIC","porcentaje_impuesto":"numero o Mixto","cuota_impuesto":"suma cuotas impresas 2dec","total":"total impreso 2dec prioritario","moneda":"EUR","forma_pago":"","observaciones":"detalle tipos mixtos o null","tipo_contable":"IVA/IGIC|EXENTA"}
+Null si no aparece. Sin simbolo moneda.`;
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -1957,29 +1958,33 @@ async function scanInvoice() {
   document.getElementById('actionBar').style.display = 'none';
   document.getElementById('loadingText').textContent = 'Analizando factura con IA...';
 
-  const prompt = `Analiza esta factura y extrae los datos en formato JSON estricto.
-Devuelve SOLO el JSON, sin texto adicional, sin backticks, sin markdown.
-El JSON debe tener esta estructura exacta:
+  const prompt = `Devuelve SOLO JSON valido, sin markdown ni texto extra.
+
+REGLAS — sigue este orden:
+1. LEE los importes impresos. NUNCA calcules: copia valores tal como aparecen.
+2. TIPOS MIXTOS: varios porcentajes (ej. 3% y 7%) -> porcentaje_impuesto="Mixto" o tipo predominante; cuota_impuesto=suma de TODAS las cuotas impresas.
+3. COHERENCIA: comprueba Base+Cuota=Total. Si no coincide, el Total impreso manda, ajusta la Base para cuadrar. Nunca cambies Total ni Cuota.
+4. EXENTA si impuesto=0% o exencion explicita. Si no, usa IVA/IGIC.
+5. Null si no aparece. Importes sin simbolo de moneda, 2 decimales.
+
 {
   "proveedor": "nombre del emisor",
-  "nif_proveedor": "NIF/CIF del emisor",
-  "numero_factura": "Extrae únicamente el código alfanumérico identificador. PROHIBIDO incluir palabras como Original, Duplicado, Copia o Factura dentro de este campo",
-  "fecha": "fecha de emisión DD/MM/YYYY",
-  "cliente": "nombre del receptor si aparece",
-  "nif_cliente": "NIF del receptor si aparece",
-  "concepto": "descripción del servicio o producto principal",
-  "base_imponible": "importe sin impuesto, solo número con 2 decimales",
+  "nif_proveedor": "NIF/CIF emisor",
+  "numero_factura": "codigo alfanumerico — PROHIBIDO palabras Factura/Original/Duplicado/Copia",
+  "fecha": "DD/MM/YYYY",
+  "cliente": "nombre receptor si aparece",
+  "nif_cliente": "NIF receptor si aparece",
+  "concepto": "descripcion servicio o producto principal",
+  "base_imponible": "numero 2dec — ajustar si Base+Cuota no cuadra con Total",
   "tipo_impuesto": "IVA o IGIC",
-  "porcentaje_impuesto": "porcentaje como número, ej: 21 o 7",
-  "cuota_impuesto": "importe del impuesto, solo número con 2 decimales",
-  "total": "importe total, solo número con 2 decimales",
-  "moneda": "EUR u otra si aparece",
-  "forma_pago": "transferencia, tarjeta, efectivo, etc si aparece",
-  "observaciones": "cualquier dato relevante adicional, o null",
+  "porcentaje_impuesto": "numero o cadena Mixto si hay varios tipos",
+  "cuota_impuesto": "suma de todas las cuotas impresas, 2dec",
+  "total": "total impreso en factura, 2dec — valor prioritario inmutable",
+  "moneda": "EUR u otra",
+  "forma_pago": "transferencia/tarjeta/efectivo/domiciliacion o null",
+  "observaciones": "detalle de tipos mixtos si los hay, o dato relevante, o null",
   "tipo_contable": "IVA/IGIC o EXENTA"
-}
-Usa \"EXENTA\" si el porcentaje de impuesto es 0%, si la factura indica expresamente exención, o si no hay ningún impuesto aplicado. En cualquier otro caso usa \"IVA/IGIC\".
-Si un dato no aparece, usa null. Importes sin símbolo de moneda.`;
+}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
