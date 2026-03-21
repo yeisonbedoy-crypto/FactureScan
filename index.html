@@ -884,11 +884,11 @@ function switchTab(name) {
 function saveKey() {
   const val = document.getElementById('apiKeyInput').value.trim();
   if (!val.startsWith('sk-ant-')) { setStatus('keyStatus', '⚠ Formato inválido', 'err'); return; }
-  sessionStorage.setItem('factura_key', val);
-  setStatus('keyStatus', '✓ Clave guardada para esta sesión', 'ok');
+  localStorage.setItem('factura_key', val);
+  setStatus('keyStatus', '✓ Clave guardada permanentemente en este navegador', 'ok');
 }
 
-function getKey() { return sessionStorage.getItem('factura_key') || ''; }
+function getKey() { return localStorage.getItem('factura_key') || ''; }
 
 function saveUrl() {
   const val = document.getElementById('sheetsUrlInput').value.trim();
