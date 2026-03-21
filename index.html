@@ -473,6 +473,21 @@
   }
   .field-value.highlight { font-family: 'Fraunces', serif; font-size: 1.2rem; color: var(--accent); }
   .field-value.empty { color: var(--muted); font-style: italic; }
+  .field-value.error {
+    border-color: var(--danger) !important;
+    background: rgba(240,96,96,0.08) !important;
+    color: var(--danger);
+  }
+  .validation-warning {
+    padding: 0.75rem 1.25rem;
+    background: rgba(240,96,96,0.08);
+    border-bottom: 1px solid rgba(240,96,96,0.3);
+    font-size: 0.68rem;
+    color: var(--danger);
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
   .obs-section {
     padding: 1rem 1.25rem;
@@ -734,6 +749,86 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('scan')">📄 Escanear</div>
     <div class="tab" onclick="switchTab('setup')">⚙ Configuración</div>
+
+    <!-- FORMULAS SECTION -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📐 Fórmulas para totales automáticos en Sheets</div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:0.72rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem;">
+          Pega estas fórmulas en una celda vacía de tu hoja (por ejemplo a partir de la columna <strong style="color:var(--text)">S</strong>) para ver los totales actualizados automáticamente.
+        </div>
+
+        <div class="steps" style="gap:1rem;">
+
+          <div class="step">
+            <div class="step-num" style="background:rgba(200,240,96,0.1);border-color:var(--accent);color:var(--accent);">Σ</div>
+            <div class="step-content">
+              <div class="step-title">Total gastos con IVA/IGIC</div>
+              <div class="step-desc">Suma todos los totales de facturas donde el tipo contable es IVA/IGIC:</div>
+              <div style="position:relative;">
+                <div class="code-block" id="formula1">=SUMIF(Q:Q,"IVA/IGIC",M:M)</div>
+                <button class="copy-code-btn" onclick="copyFormula('formula1', this)">Copiar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num" style="background:rgba(240,200,96,0.1);border-color:var(--accent2);color:var(--accent2);">Σ</div>
+            <div class="step-content">
+              <div class="step-title">Total gastos exentos</div>
+              <div class="step-desc">Suma todos los totales de facturas marcadas como EXENTA:</div>
+              <div style="position:relative;">
+                <div class="code-block" id="formula2">=SUMIF(Q:Q,"EXENTA",M:M)</div>
+                <button class="copy-code-btn" onclick="copyFormula('formula2', this)">Copiar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num" style="background:rgba(96,240,160,0.1);border-color:var(--success);color:var(--success);">Σ</div>
+            <div class="step-content">
+              <div class="step-title">Total general de gastos</div>
+              <div class="step-desc">Suma de todos los totales (columna M), excluyendo la cabecera:</div>
+              <div style="position:relative;">
+                <div class="code-block" id="formula3">=SUM(M2:M)</div>
+                <button class="copy-code-btn" onclick="copyFormula('formula3', this)">Copiar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num" style="background:rgba(200,240,96,0.1);border-color:var(--accent);color:var(--accent);">Σ</div>
+            <div class="step-content">
+              <div class="step-title">Total IVA/IGIC a deducir</div>
+              <div class="step-desc">Suma de todas las cuotas de impuesto (columna L) — lo que puedes deducir:</div>
+              <div style="position:relative;">
+                <div class="code-block" id="formula4">=SUM(L2:L)</div>
+                <button class="copy-code-btn" onclick="copyFormula('formula4', this)">Copiar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num" style="background:rgba(96,160,240,0.1);border-color:#60a0f0;color:#60a0f0;">#</div>
+            <div class="step-content">
+              <div class="step-title">Recuento de facturas</div>
+              <div class="step-desc">Número total de facturas registradas (excluye cabecera):</div>
+              <div style="position:relative;">
+                <div class="code-block" id="formula5">=COUNTA(D2:D)</div>
+                <button class="copy-code-btn" onclick="copyFormula('formula5', this)">Copiar</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:rgba(200,240,96,0.04);border:1px solid var(--border);border-radius:6px;font-size:0.68rem;color:var(--muted);line-height:1.8;">
+          💡 <strong style="color:var(--text)">Consejo:</strong> Crea una segunda pestaña en tu Sheets llamada <strong style="color:var(--text)">"Resumen"</strong> y pon ahí todas estas fórmulas apuntando a la hoja de datos. Así tendrás un panel de control separado que no interfiere con los datos.
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ══════════════ TAB: SCAN ══════════════ -->
@@ -785,6 +880,7 @@
         <div class="badge">✓ Completado</div>
       </div>
       <div style="padding:0.6rem 1.5rem;background:rgba(200,240,96,0.06);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--accent);display:flex;align-items:center;gap:0.5rem;"><span>✏</span><span>Todos los campos son editables — haz clic sobre cualquier valor para corregirlo antes de guardar</span></div>
+    <div class="validation-warning" id="validationWarning">⚠ Los importes no cuadran: base imponible + cuota impuesto ≠ total. Revisa los campos marcados en rojo.</div>
     <div class="fields-grid" id="fieldsGrid"></div>
       <div class="obs-section" id="obsSection" style="display:none">
         <div class="obs-label">⚠ Observaciones</div>
@@ -870,10 +966,11 @@
               <div style="position:relative;">
                 <div class="code-block" id="appsScriptCode">function doGet(e) {
   try {
-    var sheet = SpreadsheetApp
-      .getActiveSpreadsheet()
-      .getActiveSheet();
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getActiveSheet();
+    var cb    = e.parameter.callback || '';
 
+    // Auto-headers si la hoja está vacía
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         "fecha_escaneo","proveedor","nif_proveedor",
@@ -884,28 +981,81 @@
       ]);
     }
 
+    // ── DUPLICATE CHECK (columna B=proveedor, D=numero_factura) ──
+    var proveedor     = (e.parameter.proveedor      || '').trim().toLowerCase();
+    var numFactura    = (e.parameter.numero_factura  || '').trim().toLowerCase();
+    var lastRow       = sheet.getLastRow();
+
+    if (proveedor && numFactura && lastRow > 1) {
+      var proveedores  = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+      var numFacturas  = sheet.getRange(2, 4, lastRow - 1, 1).getValues();
+      for (var i = 0; i < proveedores.length; i++) {
+        var existeProv = String(proveedores[i][0]).trim().toLowerCase();
+        var existeNum  = String(numFacturas[i][0]).trim().toLowerCase();
+        if (existeProv === proveedor && existeNum === numFactura) {
+          var dupJson = JSON.stringify({status:"error", msg:"DUPLICATE"});
+          var dupOut  = cb ? cb + '(' + dupJson + ')' : dupJson;
+          return ContentService
+            .createTextOutput(dupOut)
+            .setMimeType(cb
+              ? ContentService.MimeType.JAVASCRIPT
+              : ContentService.MimeType.JSON);
+        }
+      }
+    }
+
+    // Convierte texto de importe a número (maneja . y , como separadores)
+    function toNum(s) {
+      if (!s || s === '') return '';
+      var clean = String(s).trim();
+      if (clean.indexOf(',') > -1 && clean.indexOf('.') > -1) {
+        if (clean.lastIndexOf(',') > clean.lastIndexOf('.')) {
+          clean = clean.replace(/\./g,'').replace(',','.');
+        } else {
+          clean = clean.replace(/,/g,'');
+        }
+      } else {
+        clean = clean.replace(',','.');
+      }
+      var n = parseFloat(clean);
+      return isNaN(n) ? s : n;
+    }
+
     var p = e.parameter;
     sheet.appendRow([
-      p.fecha_escaneo || new Date().toLocaleString("es-ES"),
-      p.proveedor || "", p.nif_proveedor || "",
-      p.numero_factura || "", p.fecha || "",
-      p.cliente || "", p.nif_cliente || "",
-      p.concepto || "", p.base_imponible || "",
-      p.tipo_impuesto || "", p.porcentaje_impuesto || "",
-      p.cuota_impuesto || "", p.total || "",
-      p.moneda || "EUR", p.forma_pago || "",
-      p.observaciones || "",
-      p.tipo_contable || ""
+      p.fecha_escaneo          || new Date().toLocaleString("es-ES"),
+      p.proveedor              || "",
+      p.nif_proveedor          || "",
+      p.numero_factura         || "",
+      p.fecha                  || "",
+      p.cliente                || "",
+      p.nif_cliente            || "",
+      p.concepto               || "",
+      toNum(p.base_imponible),
+      p.tipo_impuesto          || "",
+      toNum(p.porcentaje_impuesto),
+      toNum(p.cuota_impuesto),
+      toNum(p.total),
+      p.moneda                 || "EUR",
+      p.forma_pago             || "",
+      p.observaciones          || "",
+      p.tipo_contable          || ""
     ]);
 
+    var json = JSON.stringify({status:"ok"});
+    var out  = cb ? cb + '(' + json + ')' : json;
     return ContentService
-      .createTextOutput(JSON.stringify({status:"ok"}))
-      .setMimeType(ContentService.MimeType.JSON);
+      .createTextOutput(out)
+      .setMimeType(cb
+        ? ContentService.MimeType.JAVASCRIPT
+        : ContentService.MimeType.JSON);
 
   } catch(err) {
+    var json = JSON.stringify({status:"error", msg:err.message});
+    var out  = (e.parameter.callback || '') + '(' + json + ')';
     return ContentService
-      .createTextOutput(JSON.stringify({status:"error",msg:err.message}))
-      .setMimeType(ContentService.MimeType.JSON);
+      .createTextOutput(out)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
 }</div>
                 <button class="copy-code-btn" onclick="copyScript()">Copiar</button>
@@ -1040,7 +1190,7 @@ Responde SOLO con el JSON de respuesta que recibas, sin explicaciones.`;
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-5',
       max_tokens: 256,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages: [{ role: 'user', content: prompt }]
@@ -1056,20 +1206,36 @@ async function sendToSheetDB(rowData) {
   const url = getUrl();
   if (!url) throw new Error('No hay URL configurada');
 
-  // Use GET with URLSearchParams — no CORS preflight, works from any browser
   const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(rowData)) {
-    params.append(k, v ?? '');
-  }
+  for (const [k, v] of Object.entries(rowData)) params.append(k, v ?? '');
 
-  const fullUrl = url + '?' + params.toString();
+  // Use JSONP pattern: inject a <script> tag that calls a global callback
+  // This bypasses CORS entirely and returns the real response from Apps Script
+  return new Promise((resolve, reject) => {
+    const cbName = '__fsCb_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timeout — la petición tardó más de 10 segundos'));
+    }, 10000);
 
-  // fetch with no-cors: fires the request, Google receives it, we can't read response
-  // but the data WILL arrive to the sheet
-  await fetch(fullUrl, { method: 'GET', mode: 'no-cors' });
-  // Small wait to let it process
-  await new Promise(r => setTimeout(r, 800));
-  return { status: 'ok' };
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(response) {
+      cleanup();
+      if (response && response.status === 'ok') resolve(response);
+      else reject(new Error(response ? response.msg : 'Respuesta vacía'));
+    };
+
+    params.append('callback', cbName);
+    script.src = url + '?' + params.toString();
+    script.onerror = () => { cleanup(); reject(new Error('Error de red al conectar con Apps Script')); };
+    document.head.appendChild(script);
+  });
 }
 
 async function testConnection() {
@@ -1179,7 +1345,7 @@ Si un dato no aparece, usa null. Importes sin símbolo de moneda.`;
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1024,
         messages: [{
           role: 'user',
@@ -1215,6 +1381,30 @@ Si un dato no aparece, usa null. Importes sin símbolo de moneda.`;
 }
 
 // ── RENDER ──
+
+function validateTotals(d) {
+  // Clear previous error states
+  document.querySelectorAll('.field-value.error').forEach(el => el.classList.remove('error'));
+  document.getElementById('validationWarning').style.display = 'none';
+
+  const base  = parseFloat(String(d.base_imponible  || '').replace(',', '.')) || null;
+  const cuota = parseFloat(String(d.cuota_impuesto  || '').replace(',', '.')) || null;
+  const total = parseFloat(String(d.total           || '').replace(',', '.')) || null;
+
+  // Only validate if all three values are present
+  if (base === null || cuota === null || total === null) return;
+
+  const diff = Math.abs((base + cuota) - total);
+  if (diff > 0.01) {
+    // Highlight the three fields in red
+    ['base_imponible', 'cuota_impuesto', 'total'].forEach(field => {
+      const el = document.querySelector(`.field-value[data-field="${field}"]`);
+      if (el) el.classList.add('error');
+    });
+    document.getElementById('validationWarning').style.display = 'flex';
+  }
+}
+
 function renderResults(d) {
   const labels = {
     proveedor: 'Proveedor / Emisor', nif_proveedor: 'NIF / CIF Emisor',
@@ -1259,6 +1449,7 @@ function renderResults(d) {
 
   document.getElementById('results').style.display = 'block';
   document.getElementById('actionBar').style.display = 'flex';
+  validateTotals(d);
   document.getElementById('sheetsSaveStatus').textContent = '';
 
   // Disable sheets button if not configured
@@ -1365,8 +1556,13 @@ async function confirmSave() {
   } catch (e) {
     document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
     btn.disabled = false;
-    statusEl.textContent = '⚠ Error al guardar: ' + e.message;
-    statusEl.style.color = 'var(--danger)';
+    if (e.message === 'DUPLICATE') {
+      statusEl.innerHTML = '⚠️ <strong>Esta factura ya está registrada en tu contabilidad.</strong> No se ha guardado para evitar duplicados.';
+      statusEl.style.color = 'var(--accent2)';
+    } else {
+      statusEl.textContent = '⚠ Error al guardar: ' + e.message;
+      statusEl.style.color = 'var(--danger)';
+    }
   }
 }
 
@@ -1391,6 +1587,15 @@ function copyScript() {
   const code = document.getElementById('appsScriptCode').textContent;
   navigator.clipboard.writeText(code);
   const btn = document.querySelector('.copy-code-btn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+
+function copyFormula(id, btn) {
+  const text = document.getElementById(id).textContent.trim();
+  navigator.clipboard.writeText(text);
   const orig = btn.textContent;
   btn.textContent = '✓ Copiado';
   setTimeout(() => btn.textContent = orig, 1500);
