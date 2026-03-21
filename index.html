@@ -1036,7 +1036,7 @@
     </div>
 
     <!-- Upload -->
-    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+    <div class="upload-zone" id="uploadZone" onclick="triggerFileInput()">
       <span class="upload-icon">📄</span>
       <div class="upload-title">Sube tu factura</div>
       <div class="upload-sub">Arrastra aquí o haz clic para seleccionar<br>JPG · PNG · WEBP</div>
@@ -1600,15 +1600,13 @@ async function testConnection() {
 
 
 // ── FILE ──
-document.getElementById('fileInput').addEventListener('change', (e) => {
-  const files = Array.from(e.target.files);
+function handleFileInput(e) {
+  const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
   if (!files.length) return;
-  if (files.length === 1) {
-    loadFile(files[0]);
-  } else {
-    loadBatch(files);
-  }
-});
+  if (files.length === 1) loadFile(files[0]);
+  else loadBatch(files);
+}
+document.getElementById('fileInput').addEventListener('change', handleFileInput);
 
 const zone = document.getElementById('uploadZone');
 zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
@@ -2268,18 +2266,25 @@ function resetAll() {
   currentData = null;
   currentImageB64 = null;
 
-  // Replace file input with a fresh clone so 'change' fires even for same file
+  // Fresh clone so 'change' fires even for the same file selection
   const oldInput = document.getElementById('fileInput');
-  const newInput = oldInput.cloneNode(true);
-  newInput.value = '';
+  const newInput = document.createElement('input');
+  newInput.type     = 'file';
+  newInput.id       = 'fileInput';
+  newInput.accept   = 'image/*';
+  newInput.multiple = true;
   oldInput.parentNode.replaceChild(newInput, oldInput);
-  newInput.addEventListener('change', (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  // Reattach the unified change handler (single + batch)
+  newInput.addEventListener('change', handleFileInput);
 
+  // Single-invoice UI
   document.getElementById('previewArea').style.display = 'none';
   document.getElementById('previewImg').src = '';
   document.getElementById('fileName').textContent = '—';
   document.getElementById('btnScan').style.display = 'none';
   document.getElementById('btnScan').disabled = false;
+  document.getElementById('btnScan').textContent = '⚡ Analizar factura';
+  document.getElementById('btnScan').onclick = scanInvoice;
   document.getElementById('results').style.display = 'none';
   document.getElementById('actionBar').style.display = 'none';
   document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
@@ -2289,24 +2294,30 @@ function resetAll() {
   document.getElementById('validationWarning').style.display = 'none';
   document.querySelectorAll('.field-value.error').forEach(el => el.classList.remove('error'));
   hide('loading'); hide('errorBox');
+
+  // Session cleanup
   sessionStorage.removeItem('factura_currentData');
   sessionStorage.removeItem('factura_currentImage');
   sessionStorage.removeItem('factura_batch');
   const notice = document.getElementById('restoreNotice');
   if (notice) notice.style.display = 'none';
-  // Reset batch UI
+
+  // Batch UI reset
   batchQueue = []; batchResults = []; selectedBatchIdx = -1;
   document.getElementById('batchQueue').style.display = 'none';
+  document.getElementById('batchFileList').innerHTML = '';
   document.getElementById('batchSummary').style.display = 'none';
   document.getElementById('btnSaveAll').style.display = 'none';
   document.getElementById('uploadZone').style.display = 'block';
   document.getElementById('progressWrap').style.display = 'none';
   document.getElementById('progressBar').style.width = '0%';
-  document.getElementById('btnScan').textContent = '⚡ Analizar factura';
-  document.getElementById('btnScan').onclick = scanInvoice;
 }
 
 // ── UTILS ──
+function triggerFileInput() {
+  const input = document.getElementById('fileInput');
+  if (input) input.click();
+}
 function show(id) { document.getElementById(id).style.display = 'block'; }
 function hide(id) { document.getElementById(id).style.display = 'none'; }
 function showError(msg) {
