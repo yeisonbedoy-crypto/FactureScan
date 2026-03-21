@@ -749,86 +749,6 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('scan')">📄 Escanear</div>
     <div class="tab" onclick="switchTab('setup')">⚙ Configuración</div>
-
-    <!-- FORMULAS SECTION -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">📐 Fórmulas para totales automáticos en Sheets</div>
-      </div>
-      <div class="card-body">
-        <div style="font-size:0.72rem;color:var(--muted);line-height:1.8;margin-bottom:1.25rem;">
-          Pega estas fórmulas en una celda vacía de tu hoja (por ejemplo a partir de la columna <strong style="color:var(--text)">S</strong>) para ver los totales actualizados automáticamente.
-        </div>
-
-        <div class="steps" style="gap:1rem;">
-
-          <div class="step">
-            <div class="step-num" style="background:rgba(200,240,96,0.1);border-color:var(--accent);color:var(--accent);">Σ</div>
-            <div class="step-content">
-              <div class="step-title">Total gastos con IVA/IGIC</div>
-              <div class="step-desc">Suma todos los totales de facturas donde el tipo contable es IVA/IGIC:</div>
-              <div style="position:relative;">
-                <div class="code-block" id="formula1">=SUMIF(Q:Q,"IVA/IGIC",M:M)</div>
-                <button class="copy-code-btn" onclick="copyFormula('formula1', this)">Copiar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-num" style="background:rgba(240,200,96,0.1);border-color:var(--accent2);color:var(--accent2);">Σ</div>
-            <div class="step-content">
-              <div class="step-title">Total gastos exentos</div>
-              <div class="step-desc">Suma todos los totales de facturas marcadas como EXENTA:</div>
-              <div style="position:relative;">
-                <div class="code-block" id="formula2">=SUMIF(Q:Q,"EXENTA",M:M)</div>
-                <button class="copy-code-btn" onclick="copyFormula('formula2', this)">Copiar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-num" style="background:rgba(96,240,160,0.1);border-color:var(--success);color:var(--success);">Σ</div>
-            <div class="step-content">
-              <div class="step-title">Total general de gastos</div>
-              <div class="step-desc">Suma de todos los totales (columna M), excluyendo la cabecera:</div>
-              <div style="position:relative;">
-                <div class="code-block" id="formula3">=SUM(M2:M)</div>
-                <button class="copy-code-btn" onclick="copyFormula('formula3', this)">Copiar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-num" style="background:rgba(200,240,96,0.1);border-color:var(--accent);color:var(--accent);">Σ</div>
-            <div class="step-content">
-              <div class="step-title">Total IVA/IGIC a deducir</div>
-              <div class="step-desc">Suma de todas las cuotas de impuesto (columna L) — lo que puedes deducir:</div>
-              <div style="position:relative;">
-                <div class="code-block" id="formula4">=SUM(L2:L)</div>
-                <button class="copy-code-btn" onclick="copyFormula('formula4', this)">Copiar</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-num" style="background:rgba(96,160,240,0.1);border-color:#60a0f0;color:#60a0f0;">#</div>
-            <div class="step-content">
-              <div class="step-title">Recuento de facturas</div>
-              <div class="step-desc">Número total de facturas registradas (excluye cabecera):</div>
-              <div style="position:relative;">
-                <div class="code-block" id="formula5">=COUNTA(D2:D)</div>
-                <button class="copy-code-btn" onclick="copyFormula('formula5', this)">Copiar</button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:rgba(200,240,96,0.04);border:1px solid var(--border);border-radius:6px;font-size:0.68rem;color:var(--muted);line-height:1.8;">
-          💡 <strong style="color:var(--text)">Consejo:</strong> Crea una segunda pestaña en tu Sheets llamada <strong style="color:var(--text)">"Resumen"</strong> y pon ahí todas estas fórmulas apuntando a la hoja de datos. Así tendrás un panel de control separado que no interfiere con los datos.
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ══════════════ TAB: SCAN ══════════════ -->
@@ -1109,6 +1029,66 @@
           El script solo tiene acceso a tu hoja de cálculo y no envía datos a ningún sitio externo.
         </div>
       </div>
+
+    <!-- FORMULAS SECTION -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📐 Fórmulas para totales automáticos en Sheets</div>
+      </div>
+      <div class="card-body">
+        <div class="step-desc" style="margin-bottom:1.25rem;">
+          Pega estas fórmulas en una celda vacía de tu hoja (por ejemplo columna <strong style="color:var(--text)">S</strong>) para ver totales actualizados automáticamente.
+        </div>
+
+        <div style="display:grid;gap:1px;background:var(--border);border-radius:6px;overflow:hidden;margin-bottom:1.25rem;">
+
+          <div style="background:var(--surface);padding:1rem 1.25rem;">
+            <div class="field-label" style="margin-bottom:0.5rem;">Total gastos con IVA/IGIC</div>
+            <div style="position:relative;">
+              <div class="code-block" id="formula1" style="white-space:nowrap;">=SUMIF(Q:Q,"IVA/IGIC",M:M)</div>
+              <button class="copy-code-btn" onclick="copyFormula('formula1',this)">Copiar</button>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);padding:1rem 1.25rem;">
+            <div class="field-label" style="margin-bottom:0.5rem;">Total gastos exentos</div>
+            <div style="position:relative;">
+              <div class="code-block" id="formula2" style="white-space:nowrap;">=SUMIF(Q:Q,"EXENTA",M:M)</div>
+              <button class="copy-code-btn" onclick="copyFormula('formula2',this)">Copiar</button>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);padding:1rem 1.25rem;">
+            <div class="field-label" style="margin-bottom:0.5rem;">Total general de gastos</div>
+            <div style="position:relative;">
+              <div class="code-block" id="formula3" style="white-space:nowrap;">=SUM(M2:M)</div>
+              <button class="copy-code-btn" onclick="copyFormula('formula3',this)">Copiar</button>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);padding:1rem 1.25rem;">
+            <div class="field-label" style="margin-bottom:0.5rem;">Total IVA/IGIC a deducir</div>
+            <div style="position:relative;">
+              <div class="code-block" id="formula4" style="white-space:nowrap;">=SUM(L2:L)</div>
+              <button class="copy-code-btn" onclick="copyFormula('formula4',this)">Copiar</button>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);padding:1rem 1.25rem;">
+            <div class="field-label" style="margin-bottom:0.5rem;">Recuento de facturas</div>
+            <div style="position:relative;">
+              <div class="code-block" id="formula5" style="white-space:nowrap;">=COUNTA(D2:D)</div>
+              <button class="copy-code-btn" onclick="copyFormula('formula5',this)">Copiar</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="padding:0.85rem 1rem;background:rgba(200,240,96,0.04);border:1px solid var(--border);border-radius:6px;font-size:0.68rem;color:var(--muted);line-height:1.8;">
+          💡 <strong style="color:var(--text)">Consejo:</strong> Crea una segunda pestaña en tu Sheets llamada <strong style="color:var(--text)">"Resumen"</strong> y pon ahí estas fórmulas apuntando a la hoja de datos para tener un panel separado.
+        </div>
+      </div>
+    </div>
     </div>
 
   </div>
