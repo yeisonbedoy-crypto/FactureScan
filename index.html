@@ -91,12 +91,14 @@
 
   .main {
     max-width: 920px;
+    width: 100%;
     margin: 0 auto;
     padding: 2.5rem 2rem;
     padding-top: calc(2.5rem + env(safe-area-inset-top));
     padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
     display: grid;
     gap: 1.5rem;
+    box-sizing: border-box;
   }
 
   /* ── TABS ── */
@@ -130,6 +132,8 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .card-header {
@@ -158,6 +162,12 @@
     grid-template-columns: 2rem 1fr;
     gap: 1rem;
     align-items: start;
+    min-width: 0;
+  }
+
+  .step-content {
+    min-width: 0;
+    overflow: hidden;
   }
 
   .step-num {
@@ -186,6 +196,7 @@
     color: var(--text);
     margin-bottom: 0.4rem;
     font-weight: 500;
+    word-break: break-word;
   }
 
   .step-desc {
@@ -193,6 +204,8 @@
     color: var(--muted);
     line-height: 1.7;
     margin-bottom: 0.75rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .step-desc a {
@@ -239,10 +252,12 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    min-width: 0;
   }
 
   .field-input {
     flex: 1;
+    min-width: 0;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -252,6 +267,7 @@
     font-size: 0.75rem;
     outline: none;
     transition: border-color 0.15s;
+    word-break: break-all;
   }
 
   .field-input:focus { border-color: var(--accent); }
@@ -279,11 +295,15 @@
     color: var(--muted);
     margin-top: 0.4rem;
     line-height: 1.6;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .status-msg {
     font-size: 0.65rem;
     margin-top: 0.4rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
   .status-ok { color: var(--success); }
   .status-err { color: var(--danger); }
