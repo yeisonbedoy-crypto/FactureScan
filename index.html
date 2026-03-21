@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FacturaScan v2 — con Google Sheets</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
 <style>
@@ -42,6 +42,7 @@
 
   header {
     padding: 1.5rem 2.5rem;
+    padding-top: calc(1.5rem + env(safe-area-inset-top));
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -91,6 +92,8 @@
     max-width: 920px;
     margin: 0 auto;
     padding: 2.5rem 2rem;
+    padding-top: calc(2.5rem + env(safe-area-inset-top));
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
     display: grid;
     gap: 1.5rem;
   }
@@ -632,7 +635,7 @@
   }
 
   @media (max-width: 600px) {
-    header { padding: 1rem 1.25rem; flex-wrap: wrap; gap: 0.5rem; }
+    header { padding: 0.8rem 1.2rem; padding-top: calc(0.8rem + env(safe-area-inset-top)); flex-wrap: wrap; gap: 0.5rem; }
     .main { padding: 1.25rem 1rem; gap: 1.25rem; }
     .fields-grid { grid-template-columns: 1fr 1fr; }
     .action-bar { flex-direction: column; }
@@ -658,6 +661,7 @@
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(4px);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
   .modal-overlay.open { display: flex; }
   .modal {
@@ -725,6 +729,17 @@
     cursor: pointer; transition: all 0.15s;
   }
   .btn-cancel-modal:hover { color: var(--text); border-color: var(--text); }
+
+  /* iOS Safari: prevent auto-zoom on focus (font-size must be >= 16px) */
+  input, textarea, [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+  /* Override for desktop where we want smaller fonts in specific contexts */
+  @media (min-width: 601px) {
+    input, textarea { font-size: 0.78rem !important; }
+    [contenteditable="true"] { font-size: 0.88rem !important; }
+    .field-value.highlight[contenteditable="true"] { font-size: 1.2rem !important; }
+  }
 </style>
 </head>
 <body>
@@ -765,12 +780,19 @@
       <div class="status-msg" id="keyStatus"></div>
     </div>
 
+    <!-- Restore notice -->
+    <div id="restoreNotice" style="display:none;align-items:center;gap:0.75rem;padding:0.75rem 1rem;background:rgba(200,240,96,0.06);border:1px solid rgba(200,240,96,0.2);border-radius:6px;font-size:0.7rem;color:var(--accent);">
+      <span>↩</span>
+      <span>Sesión restaurada — tus datos del último escaneo siguen aquí.</span>
+      <button onclick="resetAll()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);padding:0.25rem 0.6rem;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.62rem;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;">Limpiar</button>
+    </div>
+
     <!-- Upload -->
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
       <span class="upload-icon">📄</span>
       <div class="upload-title">Sube tu factura</div>
       <div class="upload-sub">Arrastra aquí o haz clic para seleccionar<br>JPG · PNG · WEBP</div>
-      <input type="file" id="fileInput" accept="image/*" />
+      <input type="file" id="fileInput" accept="image/*" capture="environment" />
     </div>
 
     <!-- Preview -->
@@ -901,25 +923,23 @@
       ]);
     }
 
-    // ── DUPLICATE CHECK (columna B=proveedor, D=numero_factura) ──
-    var proveedor     = (e.parameter.proveedor      || '').trim().toLowerCase();
-    var numFactura    = (e.parameter.numero_factura  || '').trim().toLowerCase();
-    var lastRow       = sheet.getLastRow();
+    // Normaliza: elimina todo lo que no sea alfanumérico para comparar
+    function norm(s) {
+      return String(s || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    }
 
-    if (proveedor && numFactura && lastRow > 1) {
-      var proveedores  = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
-      var numFacturas  = sheet.getRange(2, 4, lastRow - 1, 1).getValues();
-      for (var i = 0; i < proveedores.length; i++) {
-        var existeProv = String(proveedores[i][0]).trim().toLowerCase();
-        var existeNum  = String(numFacturas[i][0]).trim().toLowerCase();
-        if (existeProv === proveedor && existeNum === numFactura) {
+    // ── DUPLICATE CHECK: solo por numero_factura (columna D) normalizado ──
+    var numFacturaNorm = norm(e.parameter.numero_factura);
+
+    if (numFacturaNorm && sheet.getLastRow() > 1) {
+      var colD = sheet.getRange(2, 4, sheet.getLastRow() - 1, 1).getValues();
+      for (var i = 0; i < colD.length; i++) {
+        if (norm(colD[i][0]) === numFacturaNorm) {
           var dupJson = JSON.stringify({status:"error", msg:"DUPLICATE"});
           var dupOut  = cb ? cb + '(' + dupJson + ')' : dupJson;
           return ContentService
             .createTextOutput(dupOut)
-            .setMimeType(cb
-              ? ContentService.MimeType.JAVASCRIPT
-              : ContentService.MimeType.JSON);
+            .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
         }
       }
     }
@@ -966,9 +986,7 @@
     var out  = cb ? cb + '(' + json + ')' : json;
     return ContentService
       .createTextOutput(out)
-      .setMimeType(cb
-        ? ContentService.MimeType.JAVASCRIPT
-        : ContentService.MimeType.JSON);
+      .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
 
   } catch(err) {
     var json = JSON.stringify({status:"error", msg:err.message});
@@ -1345,7 +1363,7 @@ El JSON debe tener esta estructura exacta:
 {
   "proveedor": "nombre del emisor",
   "nif_proveedor": "NIF/CIF del emisor",
-  "numero_factura": "número de factura",
+  "numero_factura": "Extrae únicamente el código alfanumérico identificador. PROHIBIDO incluir palabras como Original, Duplicado, Copia o Factura dentro de este campo",
   "fecha": "fecha de emisión DD/MM/YYYY",
   "cliente": "nombre del receptor si aparece",
   "nif_cliente": "NIF del receptor si aparece",
@@ -1398,6 +1416,8 @@ Si un dato no aparece, usa null. Importes sin símbolo de moneda.`;
     }
 
     currentData = parsed;
+    sessionStorage.setItem('factura_currentData', JSON.stringify(parsed));
+    sessionStorage.setItem('factura_currentImage', currentImageB64);
     renderResults(parsed);
 
   } catch (err) {
@@ -1581,6 +1601,9 @@ async function confirmSave() {
     document.getElementById('savedCount').textContent = savedCount;
     statusEl.textContent = '✓ Enviado a Google Sheets. Comprueba que aparece la fila en tu hoja.';
     statusEl.style.color = 'var(--success)';
+    // Clear session — data safely stored in Sheets
+    sessionStorage.removeItem('factura_currentData');
+    sessionStorage.removeItem('factura_currentImage');
   } catch (e) {
     document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
     btn.disabled = false;
@@ -1678,6 +1701,10 @@ function resetAll() {
   document.getElementById('validationWarning').style.display = 'none';
   document.querySelectorAll('.field-value.error').forEach(el => el.classList.remove('error'));
   hide('loading'); hide('errorBox');
+  sessionStorage.removeItem('factura_currentData');
+  sessionStorage.removeItem('factura_currentImage');
+  const notice = document.getElementById('restoreNotice');
+  if (notice) notice.style.display = 'none';
 }
 
 // ── UTILS ──
@@ -1702,6 +1729,32 @@ window.onload = () => {
   const url = getUrl();
   if (url) { document.getElementById('sheetsUrlInput').value = url; setStatus('urlStatus','✓ URL cargada','ok'); }
   updateSheetsIndicator();
+
+  // Restore scan session if user refreshed by accident
+  const savedData  = sessionStorage.getItem('factura_currentData');
+  const savedImage = sessionStorage.getItem('factura_currentImage');
+  if (savedData && savedImage) {
+    try {
+      currentData      = JSON.parse(savedData);
+      currentImageB64  = savedImage;
+
+      // Restore preview image
+      document.getElementById('previewImg').src = 'data:image/jpeg;base64,' + savedImage;
+      document.getElementById('previewArea').style.display = 'block';
+      document.getElementById('fileName').textContent = 'Sesión restaurada';
+      document.getElementById('btnScan').style.display = 'block';
+
+      // Restore results
+      renderResults(currentData);
+
+      // Show a subtle restore notice
+      const notice = document.getElementById('restoreNotice');
+      if (notice) notice.style.display = 'flex';
+    } catch(e) {
+      sessionStorage.removeItem('factura_currentData');
+      sessionStorage.removeItem('factura_currentImage');
+    }
+  }
 };
 </script>
 
