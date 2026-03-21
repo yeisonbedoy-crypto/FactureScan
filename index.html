@@ -1766,17 +1766,9 @@ async function processBatch() {
 
   setProgress(batchQueue.length, batchQueue.length, '');
   document.getElementById('progressLabel').textContent = '✓ Procesamiento completado';
+  // Hide the scan button — btnSaveAll takes over all actions from here
+  document.getElementById('btnScan').style.display = 'none';
   renderBatchSummary();
-
-  // Re-enable scan button as "Nueva carga" so user isn't stuck
-  const btnScan = document.getElementById('btnScan');
-  btnScan.disabled = false;
-  btnScan.textContent = '+ Nueva carga';
-  btnScan.style.background = 'transparent';
-  btnScan.style.border = '1px solid var(--border)';
-  btnScan.style.color = 'var(--muted)';
-  btnScan.style.marginTop = '0';
-  btnScan.onclick = () => resetAll();
 }
 
 function setProgress(done, total, name) {
@@ -1891,16 +1883,22 @@ async function saveAllToSheets() {
   }
 
   sessionStorage.removeItem('factura_batch');
-  btn.textContent = `✓ ${saved} guardadas · ${dupes} duplicadas · ${errors} errores`;
   document.getElementById('statDup').textContent = dupes;
 
-  // After 2.5s show a "Nueva carga" button so user can start a new batch
+  // Show result summary in button
+  btn.textContent = `✓ ${saved} guardadas · ${dupes} duplicadas · ${errors} errores`;
+  btn.style.background = 'rgba(96,240,160,0.08)';
+  btn.style.borderColor = 'rgba(96,240,160,0.3)';
+  btn.style.color = 'var(--success)';
+
+  // After 2.5s convert to "Nueva carga" — single clear CTA
   setTimeout(() => {
     btn.textContent = '+ Nueva carga de facturas';
     btn.disabled = false;
-    btn.style.background = 'transparent';
+    btn.style.background = 'var(--surface2)';
     btn.style.border = '1px solid var(--border)';
-    btn.style.color = 'var(--muted)';
+    btn.style.color = 'var(--text)';
+    btn.style.fontSize = '0.8rem';
     btn.onclick = () => resetAll();
   }, 2500);
 }
@@ -2331,7 +2329,16 @@ function resetAll() {
   document.getElementById('batchQueue').style.display = 'none';
   document.getElementById('batchFileList').innerHTML = '';
   document.getElementById('batchSummary').style.display = 'none';
-  document.getElementById('btnSaveAll').style.display = 'none';
+  // Fully restore btnSaveAll to original state
+  const btnSaveAll = document.getElementById('btnSaveAll');
+  btnSaveAll.style.display = 'none';
+  btnSaveAll.disabled = false;
+  btnSaveAll.textContent = '📊 Guardar todo en Sheets';
+  btnSaveAll.style.background = '';
+  btnSaveAll.style.border = '';
+  btnSaveAll.style.color = '';
+  btnSaveAll.style.fontSize = '';
+  btnSaveAll.onclick = saveAllToSheets;
   document.getElementById('uploadZone').style.display = 'block';
   document.getElementById('progressWrap').style.display = 'none';
   document.getElementById('progressBar').style.width = '0%';
