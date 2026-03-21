@@ -1767,6 +1767,16 @@ async function processBatch() {
   setProgress(batchQueue.length, batchQueue.length, '');
   document.getElementById('progressLabel').textContent = '✓ Procesamiento completado';
   renderBatchSummary();
+
+  // Re-enable scan button as "Nueva carga" so user isn't stuck
+  const btnScan = document.getElementById('btnScan');
+  btnScan.disabled = false;
+  btnScan.textContent = '+ Nueva carga';
+  btnScan.style.background = 'transparent';
+  btnScan.style.border = '1px solid var(--border)';
+  btnScan.style.color = 'var(--muted)';
+  btnScan.style.marginTop = '0';
+  btnScan.onclick = () => resetAll();
 }
 
 function setProgress(done, total, name) {
@@ -1882,8 +1892,17 @@ async function saveAllToSheets() {
 
   sessionStorage.removeItem('factura_batch');
   btn.textContent = `✓ ${saved} guardadas · ${dupes} duplicadas · ${errors} errores`;
-  // Refresh stats
   document.getElementById('statDup').textContent = dupes;
+
+  // After 2.5s show a "Nueva carga" button so user can start a new batch
+  setTimeout(() => {
+    btn.textContent = '+ Nueva carga de facturas';
+    btn.disabled = false;
+    btn.style.background = 'transparent';
+    btn.style.border = '1px solid var(--border)';
+    btn.style.color = 'var(--muted)';
+    btn.onclick = () => resetAll();
+  }, 2500);
 }
 
 function buildRowData(d) {
@@ -2281,10 +2300,15 @@ function resetAll() {
   document.getElementById('previewArea').style.display = 'none';
   document.getElementById('previewImg').src = '';
   document.getElementById('fileName').textContent = '—';
-  document.getElementById('btnScan').style.display = 'none';
-  document.getElementById('btnScan').disabled = false;
-  document.getElementById('btnScan').textContent = '⚡ Analizar factura';
-  document.getElementById('btnScan').onclick = scanInvoice;
+  const btnScan = document.getElementById('btnScan');
+  btnScan.style.display = 'none';
+  btnScan.disabled = false;
+  btnScan.textContent = '⚡ Analizar factura';
+  btnScan.style.background = '';
+  btnScan.style.border = '';
+  btnScan.style.color = '';
+  btnScan.style.marginTop = '';
+  btnScan.onclick = scanInvoice;
   document.getElementById('results').style.display = 'none';
   document.getElementById('actionBar').style.display = 'none';
   document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
