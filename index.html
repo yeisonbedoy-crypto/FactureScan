@@ -451,7 +451,26 @@
     margin-bottom: 0.35rem;
   }
 
-  .field-value { font-size: 0.88rem; color: var(--text); word-break: break-word; }
+  .field-value {
+    font-size: 0.88rem; color: var(--text); word-break: break-word;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 0.25rem 0.4rem;
+    margin: -0.25rem -0.4rem;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: text;
+    min-height: 1.4em;
+  }
+  .field-value:hover {
+    border-color: var(--border);
+    background: var(--surface2);
+  }
+  .field-value:focus {
+    border-color: var(--accent) !important;
+    background: var(--surface2);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(200,240,96,0.15);
+  }
   .field-value.highlight { font-family: 'Fraunces', serif; font-size: 1.2rem; color: var(--accent); }
   .field-value.empty { color: var(--muted); font-style: italic; }
 
@@ -613,6 +632,84 @@
   @media (max-width: 380px) {
     .fields-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── CONFIRM MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: min(480px, 90vw);
+    overflow: hidden;
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+  .modal-header {
+    padding: 1.25rem 1.5rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-title { font-family: 'Fraunces', serif; font-size: 1rem; color: var(--text); }
+  .modal-close { background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer; padding:0.25rem; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 1.25rem 1.5rem; }
+  .modal-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+  }
+  .modal-row:last-child { border-bottom: none; }
+  .modal-row-label { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .modal-row-value { color: var(--text); text-align: right; max-width: 60%; word-break: break-word; }
+  .modal-row-value.big { font-family: 'Fraunces', serif; font-size: 1.2rem; color: var(--accent); }
+  .modal-row-value.tag {
+    font-size: 0.62rem; padding: 0.2rem 0.6rem; border-radius: 20px;
+    background: rgba(200,240,96,0.15); color: var(--accent);
+    border: 1px solid rgba(200,240,96,0.3); text-transform: uppercase;
+  }
+  .modal-row-value.tag.exenta {
+    background: rgba(240,200,96,0.15); color: var(--accent2);
+    border-color: rgba(240,200,96,0.3);
+  }
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    display: flex; gap: 0.75rem;
+  }
+  .btn-confirm {
+    flex: 2; padding: 0.8rem;
+    background: var(--sheets-bg); border: 1px solid var(--sheets-border);
+    color: #5dca7a; border-radius: 6px;
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.15s; font-weight: 500;
+  }
+  .btn-confirm:hover { background: rgba(52,168,83,0.2); }
+  .btn-cancel-modal {
+    flex: 1; padding: 0.8rem;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px;
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-cancel-modal:hover { color: var(--text); border-color: var(--text); }
 </style>
 </head>
 <body>
@@ -687,7 +784,7 @@
         <div class="results-title">Datos extraídos</div>
         <div class="badge">✓ Completado</div>
       </div>
-      <div style="padding:0.5rem 1.5rem;background:rgba(200,240,96,0.04);border-bottom:1px solid var(--border);font-size:0.62rem;color:var(--muted);">✏ Puedes editar cualquier campo haciendo clic sobre él antes de guardar</div>
+      <div style="padding:0.6rem 1.5rem;background:rgba(200,240,96,0.06);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--accent);display:flex;align-items:center;gap:0.5rem;"><span>✏</span><span>Todos los campos son editables — haz clic sobre cualquier valor para corregirlo antes de guardar</span></div>
     <div class="fields-grid" id="fieldsGrid"></div>
       <div class="obs-section" id="obsSection" style="display:none">
         <div class="obs-label">⚠ Observaciones</div>
@@ -1147,9 +1244,7 @@ function renderResults(d) {
       <div class="field-value ${['total','base_imponible','cuota_impuesto'].includes(key) && !isEmpty ? 'highlight' : ''} ${isEmpty ? 'empty' : ''}"
            contenteditable="true"
            data-field="${key}"
-           style="outline:none;cursor:text;border-bottom:1px dashed transparent;transition:border-color 0.15s;"
-           onfocus="this.style.borderBottomColor='var(--accent)'"
-           onblur="this.style.borderBottomColor='transparent'"
+           title="Haz clic para editar"
       >${displayVal}</div>
     `;
     grid.appendChild(div);
@@ -1178,39 +1273,88 @@ function renderResults(d) {
 async function saveToSheets() {
   const url = getUrl();
   if (!url || !currentData) return;
+  showConfirmModal();
+}
+
+function collectDomData() {
+  // Read current DOM values (user may have edited them)
+  const domValues = {};
+  document.querySelectorAll('.field-value[data-field]').forEach(el => {
+    let val = el.textContent.trim();
+    val = val.replace(/ €$/, '').replace(/%$/, '').replace(/^—$/, '');
+    domValues[el.dataset.field] = val;
+  });
+  return {
+    fecha_escaneo: new Date().toLocaleString('es-ES'),
+    proveedor: domValues.proveedor || '',
+    nif_proveedor: domValues.nif_proveedor || '',
+    numero_factura: domValues.numero_factura || '',
+    fecha: domValues.fecha || '',
+    cliente: domValues.cliente || '',
+    nif_cliente: domValues.nif_cliente || '',
+    concepto: domValues.concepto || '',
+    base_imponible: domValues.base_imponible || '',
+    tipo_impuesto: domValues.tipo_impuesto || '',
+    porcentaje_impuesto: domValues.porcentaje_impuesto || '',
+    cuota_impuesto: domValues.cuota_impuesto || '',
+    total: domValues.total || '',
+    moneda: domValues.moneda || 'EUR',
+    forma_pago: domValues.forma_pago || '',
+    observaciones: domValues.observaciones || '',
+    tipo_contable: domValues.tipo_contable || currentData.tipo_contable || ''
+  };
+}
+
+function showConfirmModal() {
+  const d = collectDomData();
+  const isExenta = (d.tipo_contable || '').toUpperCase() === 'EXENTA';
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="modal-row">
+      <span class="modal-row-label">Proveedor</span>
+      <span class="modal-row-value">${d.proveedor || '—'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Nº Factura</span>
+      <span class="modal-row-value">${d.numero_factura || '—'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Fecha</span>
+      <span class="modal-row-value">${d.fecha || '—'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Base Imponible</span>
+      <span class="modal-row-value">${d.base_imponible ? d.base_imponible + ' €' : '—'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">${d.tipo_impuesto || 'Impuesto'} (${d.porcentaje_impuesto || 0}%)</span>
+      <span class="modal-row-value">${d.cuota_impuesto ? d.cuota_impuesto + ' €' : '—'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Total</span>
+      <span class="modal-row-value big">${d.total ? d.total + ' €' : '—'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Tipo Contable</span>
+      <span class="modal-row-value tag ${isExenta ? 'exenta' : ''}">${d.tipo_contable || '—'}</span>
+    </div>
+  `;
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('open');
+}
+
+async function confirmSave() {
+  closeModal();
+  const rowData = collectDomData();
   const btn = document.getElementById('btnSheets');
   const statusEl = document.getElementById('sheetsSaveStatus');
   btn.disabled = true;
   document.getElementById('btnSheetsText').textContent = '⏳ Guardando...';
   statusEl.textContent = '';
   try {
-    // Read current DOM values (user may have edited them)
-    const domValues = {};
-    document.querySelectorAll('.field-value[data-field]').forEach(el => {
-      let val = el.textContent.trim();
-      // Strip currency/percent suffixes added for display
-      val = val.replace(/ €$/, '').replace(/%$/, '').replace(/^—$/, '');
-      domValues[el.dataset.field] = val;
-    });
-    const rowData = {
-      fecha_escaneo: new Date().toLocaleString('es-ES'),
-      proveedor: domValues.proveedor || '',
-      nif_proveedor: domValues.nif_proveedor || '',
-      numero_factura: domValues.numero_factura || '',
-      fecha: domValues.fecha || '',
-      cliente: domValues.cliente || '',
-      nif_cliente: domValues.nif_cliente || '',
-      concepto: domValues.concepto || '',
-      base_imponible: domValues.base_imponible || '',
-      tipo_impuesto: domValues.tipo_impuesto || '',
-      porcentaje_impuesto: domValues.porcentaje_impuesto || '',
-      cuota_impuesto: domValues.cuota_impuesto || '',
-      total: domValues.total || '',
-      moneda: domValues.moneda || 'EUR',
-      forma_pago: domValues.forma_pago || '',
-      observaciones: domValues.observaciones || '',
-      tipo_contable: domValues.tipo_contable || currentData.tipo_contable || ''
-    };
     await sendToSheetDB(rowData);
     document.getElementById('btnSheetsText').textContent = '✓ Guardado en Sheets';
     btn.style.background = 'rgba(52,168,83,0.25)';
@@ -1302,5 +1446,20 @@ window.onload = () => {
   updateSheetsIndicator();
 };
 </script>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Confirmar datos a guardar</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-confirm" onclick="confirmSave()">📊 Confirmar y guardar en Sheets</button>
+      <button class="btn-cancel-modal" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
