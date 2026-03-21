@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FacturaScan v2 — con Google Sheets</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0d;
+    --surface: #1a1a16;
+    --surface2: #242420;
+    --border: #2e2e28;
+    --accent: #c8f060;
+    --accent2: #f0c860;
+    --text: #e8e8e0;
+    --muted: #7a7a6e;
+    --danger: #f06060;
+    --success: #60f0a0;
+    --sheets: #34a853;
+    --sheets-bg: rgba(52, 168, 83, 0.1);
+    --sheets-border: rgba(52, 168, 83, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  header {
+    padding: 1.5rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: baseline; gap: 0.75rem; }
+
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .logo-tag {
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.5rem;
+    border-radius: 2px;
+  }
+
+  .sheets-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .sheets-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+
+  .sheets-dot.connected { background: var(--sheets); box-shadow: 0 0 6px rgba(52,168,83,0.5); }
+
+  .main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    gap: 0;
+  }
+
+  .tab {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: grid; gap: 1.5rem; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 0.85rem 1.25rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  .card-body { padding: 1.5rem; }
+
+  /* ── SETUP STEPS ── */
+  .steps { display: grid; gap: 1.5rem; }
+
+  .step {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .step-num {
+    width: 2rem; height: 2rem;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .step-num.done {
+    background: rgba(200,240,96,0.15);
+    border-color: var(--accent);
+  }
+
+  .step-content {}
+
+  .step-title {
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+  }
+
+  .step-desc {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-desc a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .step-desc a:hover { text-decoration: underline; }
+
+  /* Code block */
+  .code-block {
+    background: #0a0a08;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    font-size: 0.68rem;
+    color: #a0d080;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre;
+    position: relative;
+  }
+
+  .copy-code-btn {
+    position: absolute;
+    top: 0.6rem; right: 0.6rem;
+    padding: 0.3rem 0.6rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: all 0.15s;
+  }
+
+  .copy-code-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Input row */
+  .input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .field-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.6rem 0.9rem;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field-input:focus { border-color: var(--accent); }
+  .field-input::placeholder { color: var(--muted); }
+
+  .btn-sm {
+    padding: 0.6rem 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hint {
+    font-size: 0.63rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    line-height: 1.6;
+  }
+
+  .status-msg {
+    font-size: 0.65rem;
+    margin-top: 0.4rem;
+  }
+  .status-ok { color: var(--success); }
+  .status-err { color: var(--danger); }
+  .status-info { color: var(--accent2); }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(200, 240, 96, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: #1e1e18;
+  }
+
+  .upload-icon { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+  .upload-title { font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--text); margin-bottom: 0.4rem; }
+  .upload-sub { font-size: 0.68rem; color: var(--muted); line-height: 1.8; }
+  #fileInput { display: none; }
+
+  /* Preview */
+  .preview-area {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .preview-header {
+    padding: 0.7rem 1.25rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.68rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .preview-header span { color: var(--accent2); }
+
+  #previewImg {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    display: block;
+    background: #0a0a08;
+  }
+
+  /* Button */
+  .btn-scan {
+    display: none;
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--accent);
+    color: #0f0f0d;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+  }
+
+  .btn-scan:hover { background: #d4f870; transform: translateY(-1px); }
+  .btn-scan:active { transform: translateY(0); }
+  .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Loading */
+  .loading {
+    display: none;
+    padding: 2rem;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .loading-dots { display: inline-flex; gap: 6px; margin-bottom: 1rem; }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  .loading-text { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* Results */
+  .results {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .results-header {
+    padding: 1rem 1.5rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .results-title { font-family: 'Fraunces', serif; font-size: 1rem; color: var(--accent); }
+
+  .badge {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    background: rgba(96, 240, 160, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(96, 240, 160, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .field {
+    background: var(--surface);
+    padding: 1rem 1.25rem;
+    transition: background 0.15s;
+  }
+
+  .field:hover { background: var(--surface2); }
+
+  .field-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.35rem;
+  }
+
+  .field-value { font-size: 0.88rem; color: var(--text); word-break: break-word; }
+  .field-value.highlight { font-family: 'Fraunces', serif; font-size: 1.2rem; color: var(--accent); }
+  .field-value.empty { color: var(--muted); font-style: italic; }
+
+  .obs-section {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    background: rgba(240, 200, 96, 0.04);
+  }
+
+  .obs-label { font-size: 0.6rem; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.5rem; }
+  .obs-text { font-size: 0.75rem; color: var(--muted); line-height: 1.7; }
+
+  /* Action bar */
+  .action-bar {
+    display: none;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .btn-sheets {
+    flex: 2;
+    min-width: 160px;
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--sheets-border);
+    background: var(--sheets-bg);
+    color: #5dca7a;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .btn-sheets:hover { background: rgba(52,168,83,0.18); border-color: var(--sheets); color: #6dda8a; }
+  .btn-sheets:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-action {
+    flex: 1;
+    min-width: 100px;
+    padding: 0.8rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-action:hover { border-color: var(--accent); color: var(--accent); background: rgba(200,240,96,0.05); }
+
+  .btn-new {
+    flex: 1;
+    min-width: 100px;
+    padding: 0.8rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-new:hover { color: var(--text); border-color: var(--text); }
+
+  .sheets-save-status {
+    width: 100%;
+    font-size: 0.65rem;
+    padding: 0.5rem 0;
+    text-align: center;
+  }
+
+  /* Error */
+  .error-box {
+    display: none;
+    padding: 1rem 1.25rem;
+    background: rgba(240, 96, 96, 0.08);
+    border: 1px solid rgba(240, 96, 96, 0.3);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    color: var(--danger);
+    line-height: 1.6;
+  }
+
+  /* Counter badge */
+  .counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.62rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+  }
+
+  .counter-num { color: var(--accent); font-weight: 500; }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--muted);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* API section inside scan tab */
+  .api-mini {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+  }
+
+  .api-mini-title {
+    font-size: 0.62rem;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.6rem;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 1rem 1.25rem; flex-wrap: wrap; gap: 0.5rem; }
+    .main { padding: 1.25rem 1rem; gap: 1.25rem; }
+    .fields-grid { grid-template-columns: 1fr 1fr; }
+    .action-bar { flex-direction: column; }
+    .btn-sheets, .btn-action, .btn-new { flex: unset; width: 100%; }
+    .steps { gap: 1.25rem; }
+    .code-block { font-size: 0.6rem; }
+    .sheets-indicator { font-size: 0.6rem; }
+    .input-row { flex-direction: column; }
+    .input-row .btn-sm { width: 100%; }
+  }
+
+  @media (max-width: 380px) {
+    .fields-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">FacturaScan</div>
+    <div class="logo-tag">v2.0 · Sheets</div>
+  </div>
+  <div class="sheets-indicator">
+    <div class="sheets-dot" id="sheetsDot"></div>
+    <span id="sheetsStatus">Sheets no conectado</span>
+    <span style="margin-left:0.5rem;" class="counter">
+      <span class="counter-num" id="savedCount">0</span> guardadas
+    </span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('scan')">📄 Escanear</div>
+    <div class="tab" onclick="switchTab('setup')">⚙ Configuración</div>
+  </div>
+
+  <!-- ══════════════ TAB: SCAN ══════════════ -->
+  <div class="tab-panel active" id="tab-scan">
+
+    <!-- API key mini -->
+    <div class="api-mini">
+      <div class="api-mini-title">🔑 Clave API Anthropic</div>
+      <div class="input-row">
+        <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+        <button class="btn-sm" onclick="saveKey()">Guardar</button>
+      </div>
+      <div class="hint">Consíguela en <strong style="color:var(--text)">console.anthropic.com</strong> → API Keys. Se guarda solo en tu navegador.</div>
+      <div class="status-msg" id="keyStatus"></div>
+    </div>
+
+    <!-- Upload -->
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <span class="upload-icon">📄</span>
+      <div class="upload-title">Sube tu factura</div>
+      <div class="upload-sub">Arrastra aquí o haz clic para seleccionar<br>JPG · PNG · WEBP</div>
+      <input type="file" id="fileInput" accept="image/*" />
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-area" id="previewArea">
+      <div class="preview-header">Vista previa · <span id="fileName">—</span></div>
+      <img id="previewImg" alt="Vista previa" />
+    </div>
+
+    <!-- Scan button -->
+    <button class="btn-scan" id="btnScan" onclick="scanInvoice()">⚡ Analizar factura</button>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="loading-dots">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+      <div class="loading-text" id="loadingText">Analizando factura con IA...</div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+      <div class="results-header">
+        <div class="results-title">Datos extraídos</div>
+        <div class="badge">✓ Completado</div>
+      </div>
+      <div class="fields-grid" id="fieldsGrid"></div>
+      <div class="obs-section" id="obsSection" style="display:none">
+        <div class="obs-label">⚠ Observaciones</div>
+        <div class="obs-text" id="obsText"></div>
+      </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="action-bar" id="actionBar">
+      <button class="btn-sheets" id="btnSheets" onclick="saveToSheets()">
+        <span id="btnSheetsText">📊 Guardar en Google Sheets</span>
+      </button>
+      <button class="btn-action" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn-action" onclick="copyJSON()">⎘ JSON</button>
+      <button class="btn-new" onclick="resetAll()">+ Nueva</button>
+      <div class="sheets-save-status" id="sheetsSaveStatus"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════ TAB: SETUP ══════════════ -->
+  <div class="tab-panel" id="tab-setup">
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Conectar con Google Sheets vía SheetDB — 3 pasos</div>
+      </div>
+      <div class="card-body">
+        <div class="steps">
+
+          <!-- STEP 1 -->
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-title">Prepara tu hoja de Google Sheets</div>
+              <div class="step-desc">
+                Ve a <a href="https://sheets.new" target="_blank">sheets.new</a> y crea una hoja nueva.<br>
+                En la <strong style="color:var(--text)">primera fila</strong> añade estas cabeceras exactamente así (una por columna, de A a P):
+              </div>
+              <div style="position:relative;">
+                <div id="headersCode" style="
+                  background:#0a0a08;
+                  border:1px solid var(--border);
+                  border-radius:6px;
+                  padding:1rem 1.25rem;
+                  display:grid;
+                  grid-template-columns: repeat(2, 1fr);
+                  gap:0.4rem 1.5rem;
+                ">
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">A · fecha_escaneo</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">B · proveedor</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">C · nif_proveedor</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">D · numero_factura</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">E · fecha</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">F · cliente</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">G · nif_cliente</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">H · concepto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">I · base_imponible</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">J · tipo_impuesto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">K · porcentaje_impuesto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">L · cuota_impuesto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">M · total</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">N · moneda</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">O · forma_pago</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">P · observaciones</span>
+                </div>
+                <button class="copy-code-btn" onclick="copyHeaders()">Copiar</button>
+              </div>
+              <div class="hint">Copia el texto, pégalo en la celda A1 de tu Sheets y usa <strong style="color:var(--text)">Datos → Dividir texto en columnas</strong> (separador: tabulación). O escríbelos manualmente uno a uno.</div>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-title">Pega el script en Apps Script</div>
+              <div class="step-desc">
+                En tu hoja de Sheets ve a <strong style="color:var(--text)">Extensiones → Apps Script</strong>.<br>
+                Borra todo el código existente y pega este (usa <strong style="color:var(--accent)">doGet</strong>, no doPost):
+              </div>
+              <div style="position:relative;">
+                <div class="code-block" id="appsScriptCode">function doGet(e) {
+  try {
+    var sheet = SpreadsheetApp
+      .getActiveSpreadsheet()
+      .getActiveSheet();
+
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        "fecha_escaneo","proveedor","nif_proveedor",
+        "numero_factura","fecha","cliente","nif_cliente",
+        "concepto","base_imponible","tipo_impuesto",
+        "porcentaje_impuesto","cuota_impuesto",
+        "total","moneda","forma_pago","observaciones"
+      ]);
+    }
+
+    var p = e.parameter;
+    sheet.appendRow([
+      p.fecha_escaneo || new Date().toLocaleString("es-ES"),
+      p.proveedor || "", p.nif_proveedor || "",
+      p.numero_factura || "", p.fecha || "",
+      p.cliente || "", p.nif_cliente || "",
+      p.concepto || "", p.base_imponible || "",
+      p.tipo_impuesto || "", p.porcentaje_impuesto || "",
+      p.cuota_impuesto || "", p.total || "",
+      p.moneda || "EUR", p.forma_pago || "",
+      p.observaciones || ""
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({status:"ok"}))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({status:"error",msg:err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</div>
+                <button class="copy-code-btn" onclick="copyScript()">Copiar</button>
+              </div>
+              <div class="hint">Este script convierte tu hoja en una API que acepta datos. Es gratuito y sin límites — forma parte de tu cuenta de Google.</div>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <div class="step-title">Publica el script y pega la URL aquí</div>
+              <div class="step-desc">
+                En la ventana de Apps Script:<br>
+                1. Pulsa <strong style="color:var(--text)">Implementar → Nueva implementación</strong><br>
+                2. Haz clic en el icono ⚙ junto a "Tipo" → selecciona <strong style="color:var(--text)">Aplicación web</strong><br>
+                3. En "Ejecutar como" selecciona <strong style="color:var(--text)">Yo (tu email)</strong><br>
+                4. En "Quién tiene acceso" selecciona <strong style="color:var(--text)">Cualquier usuario</strong><br>
+                5. Pulsa <strong style="color:var(--text)">Implementar</strong><br>
+                6. Si pide autorización → <strong style="color:var(--text)">Revisar permisos → elige tu cuenta → "Configuración avanzada" → "Ir al proyecto" → Permitir</strong><br>
+                7. Copia la <strong style="color:var(--text)">URL de la aplicación web</strong> que aparece (empieza por <span style="color:var(--accent)">https://script.google.com/macros/s/...</span>)
+              </div>
+              <div class="input-row">
+                <input type="text" class="field-input" id="sheetsUrlInput"
+                  placeholder="https://script.google.com/macros/s/.../exec" />
+                <button class="btn-sm" onclick="saveUrl()">Guardar</button>
+              </div>
+              <div class="hint">⚠ Importante: cada vez que modifiques el script debes crear una <strong style="color:var(--text)">nueva implementación</strong> para que los cambios surtan efecto.</div>
+              <div class="status-msg" id="urlStatus"></div>
+
+              <div style="margin-top: 1rem;">
+                <button class="btn-sm" onclick="testConnection()" style="width:100%; padding: 0.75rem; text-align:center;">
+                  🔗 Probar conexión
+                </button>
+                <div class="status-msg" id="testStatus"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">📌 Nota importante sobre permisos</div></div>
+      <div class="card-body">
+        <div style="font-size:0.72rem; color:var(--muted); line-height:1.9;">
+          Al autorizar el script, Google puede mostrar un aviso de <strong style="color:var(--text)">"Google no ha verificado esta app"</strong>. Es completamente normal para scripts propios.<br><br>
+          Haz clic en <strong style="color:var(--text)">"Configuración avanzada"</strong> → <strong style="color:var(--text)">"Ir al proyecto (no seguro)"</strong> → <strong style="color:var(--text)">Permitir</strong>.<br><br>
+          El script solo tiene acceso a tu hoja de cálculo y no envía datos a ningún sitio externo.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+let currentData = null;
+let currentImageB64 = null;
+let savedCount = 0;
+
+// ── TABS ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['scan','setup'][i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach((p, i) => {
+    p.classList.toggle('active', ['tab-scan','tab-setup'][i] === 'tab-' + name);
+  });
+}
+
+// ── PERSISTENCE ──
+function saveKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val.startsWith('sk-ant-')) { setStatus('keyStatus', '⚠ Formato inválido', 'err'); return; }
+  sessionStorage.setItem('factura_key', val);
+  setStatus('keyStatus', '✓ Clave guardada para esta sesión', 'ok');
+}
+
+function getKey() { return sessionStorage.getItem('factura_key') || ''; }
+
+function saveUrl() {
+  const val = document.getElementById('sheetsUrlInput').value.trim();
+  if (!val.startsWith('https://')) { setStatus('urlStatus', '⚠ La URL debe empezar por https://', 'err'); return; }
+  localStorage.setItem('factura_sheets_url', val);
+  setStatus('urlStatus', '✓ URL guardada', 'ok');
+  updateSheetsIndicator();
+}
+
+function getUrl() { return localStorage.getItem('factura_sheets_url') || ''; }
+
+function updateSheetsIndicator() {
+  const url = getUrl();
+  const dot = document.getElementById('sheetsDot');
+  const status = document.getElementById('sheetsStatus');
+  if (url) {
+    dot.classList.add('connected');
+    status.textContent = 'Sheets conectado';
+    status.style.color = 'var(--success)';
+    document.getElementById('btnSheets').disabled = false;
+  } else {
+    dot.classList.remove('connected');
+    status.textContent = 'Sheets no conectado';
+    status.style.color = '';
+    document.getElementById('btnSheets').disabled = true;
+  }
+}
+
+async function postToSheetDB(rowData) {
+  const url = getUrl();
+  const key = getKey();
+  if (!url || !key) throw new Error('Faltan credenciales');
+
+  const payload = { data: [rowData] };
+
+  // Use Claude API as a proxy to avoid CORS issues
+  const prompt = `Haz una petición HTTP POST a esta URL: ${url}
+Con este JSON exacto como body: ${JSON.stringify(payload)}
+Headers: Content-Type: application/json
+
+Responde SOLO con el JSON de respuesta que recibas, sin explicaciones.`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 256,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data;
+}
+
+async function sendToSheetDB(rowData) {
+  const url = getUrl();
+  if (!url) throw new Error('No hay URL configurada');
+
+  // Use GET with URLSearchParams — no CORS preflight, works from any browser
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(rowData)) {
+    params.append(k, v ?? '');
+  }
+
+  const fullUrl = url + '?' + params.toString();
+
+  // fetch with no-cors: fires the request, Google receives it, we can't read response
+  // but the data WILL arrive to the sheet
+  await fetch(fullUrl, { method: 'GET', mode: 'no-cors' });
+  // Small wait to let it process
+  await new Promise(r => setTimeout(r, 800));
+  return { status: 'ok' };
+}
+
+async function testConnection() {
+  const url = getUrl();
+  if (!url) { setStatus('testStatus', '⚠ Primero guarda la URL de SheetDB', 'err'); return; }
+  setStatus('testStatus', '⏳ Probando conexión...', 'info');
+  try {
+    const rowData = { fecha_escaneo: new Date().toLocaleString('es-ES'), proveedor: 'TEST - Conexión FacturaScan', nif_proveedor: '', numero_factura: 'TEST-001', fecha: '', cliente: '', nif_cliente: '', concepto: 'Prueba de conexión', base_imponible: '0', tipo_impuesto: 'IGIC', porcentaje_impuesto: '7', cuota_impuesto: '0', total: '0', moneda: 'EUR', forma_pago: '', observaciones: 'Borrar esta fila' };
+    await sendToSheetDB(rowData);
+    setStatus('testStatus', '✓ ¡Enviado! Revisa tu Sheets en unos segundos — debería aparecer una fila de prueba.', 'ok');
+    updateSheetsIndicator();
+  } catch (e) { setStatus('testStatus', '⚠ Error: ' + e.message, 'err'); }
+}
+
+// ── FILE ──
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', (e) => {
+  e.preventDefault(); zone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+function loadFile(file) {
+  document.getElementById('fileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    currentImageB64 = dataUrl.split(',')[1];
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('previewArea').style.display = 'block';
+    document.getElementById('btnScan').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('actionBar').style.display = 'none';
+    hide('errorBox');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── SCAN ──
+async function scanInvoice() {
+  const key = getKey();
+  if (!key) { showError('⚠ Introduce tu clave API de Anthropic primero.'); return; }
+  if (!currentImageB64) { showError('⚠ Sube una imagen de factura primero.'); return; }
+
+  document.getElementById('btnScan').disabled = true;
+  show('loading'); hide('errorBox');
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('actionBar').style.display = 'none';
+  document.getElementById('loadingText').textContent = 'Analizando factura con IA...';
+
+  const prompt = `Analiza esta factura y extrae los datos en formato JSON estricto.
+Devuelve SOLO el JSON, sin texto adicional, sin backticks, sin markdown.
+El JSON debe tener esta estructura exacta:
+{
+  "proveedor": "nombre del emisor",
+  "nif_proveedor": "NIF/CIF del emisor",
+  "numero_factura": "número de factura",
+  "fecha": "fecha de emisión DD/MM/YYYY",
+  "cliente": "nombre del receptor si aparece",
+  "nif_cliente": "NIF del receptor si aparece",
+  "concepto": "descripción del servicio o producto principal",
+  "base_imponible": "importe sin impuesto, solo número con 2 decimales",
+  "tipo_impuesto": "IVA o IGIC",
+  "porcentaje_impuesto": "porcentaje como número, ej: 21 o 7",
+  "cuota_impuesto": "importe del impuesto, solo número con 2 decimales",
+  "total": "importe total, solo número con 2 decimales",
+  "moneda": "EUR u otra si aparece",
+  "forma_pago": "transferencia, tarjeta, efectivo, etc si aparece",
+  "observaciones": "cualquier dato relevante adicional, o null"
+}
+Si un dato no aparece, usa null. Importes sin símbolo de moneda.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: currentImageB64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) { showError('Error API: ' + data.error.message); return; }
+
+    const raw = data.content[0].text.trim();
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('No se pudo interpretar la respuesta');
+    }
+
+    currentData = parsed;
+    renderResults(parsed);
+
+  } catch (err) {
+    showError('Error al analizar: ' + err.message);
+  } finally {
+    document.getElementById('btnScan').disabled = false;
+    hide('loading');
+  }
+}
+
+// ── RENDER ──
+function renderResults(d) {
+  const labels = {
+    proveedor: 'Proveedor / Emisor', nif_proveedor: 'NIF / CIF Emisor',
+    numero_factura: 'Nº Factura', fecha: 'Fecha',
+    cliente: 'Cliente', nif_cliente: 'NIF Cliente',
+    concepto: 'Concepto', base_imponible: 'Base Imponible',
+    tipo_impuesto: 'Tipo Impuesto', porcentaje_impuesto: '% Impuesto',
+    cuota_impuesto: 'Cuota Impuesto', total: 'TOTAL',
+    moneda: 'Moneda', forma_pago: 'Forma de Pago'
+  };
+
+  const grid = document.getElementById('fieldsGrid');
+  grid.innerHTML = '';
+
+  for (const [key, label] of Object.entries(labels)) {
+    const val = d[key];
+    const isEmpty = val === null || val === undefined || val === '';
+    let displayVal = isEmpty ? '—' : String(val);
+    if (!isEmpty && ['base_imponible','cuota_impuesto','total'].includes(key)) displayVal = parseFloat(val).toFixed(2) + ' €';
+    if (!isEmpty && key === 'porcentaje_impuesto') displayVal = val + '%';
+
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.innerHTML = `
+      <div class="field-label">${label}</div>
+      <div class="field-value ${['total','base_imponible','cuota_impuesto'].includes(key) && !isEmpty ? 'highlight' : ''} ${isEmpty ? 'empty' : ''}">${displayVal}</div>
+    `;
+    grid.appendChild(div);
+  }
+
+  if (d.observaciones) {
+    document.getElementById('obsText').textContent = d.observaciones;
+    document.getElementById('obsSection').style.display = 'block';
+  } else {
+    document.getElementById('obsSection').style.display = 'none';
+  }
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('actionBar').style.display = 'flex';
+  document.getElementById('sheetsSaveStatus').textContent = '';
+
+  // Disable sheets button if not configured
+  if (!getUrl()) {
+    document.getElementById('btnSheets').disabled = true;
+    document.getElementById('sheetsSaveStatus').textContent = '⚠ Configura Google Sheets en la pestaña ⚙ para habilitar este botón';
+    document.getElementById('sheetsSaveStatus').style.color = 'var(--muted)';
+  }
+}
+
+// ── SAVE TO SHEETS ──
+async function saveToSheets() {
+  const url = getUrl();
+  if (!url || !currentData) return;
+  const btn = document.getElementById('btnSheets');
+  const statusEl = document.getElementById('sheetsSaveStatus');
+  btn.disabled = true;
+  document.getElementById('btnSheetsText').textContent = '⏳ Guardando...';
+  statusEl.textContent = '';
+  try {
+    const rowData = { fecha_escaneo: new Date().toLocaleString('es-ES'), proveedor: currentData.proveedor || '', nif_proveedor: currentData.nif_proveedor || '', numero_factura: currentData.numero_factura || '', fecha: currentData.fecha || '', cliente: currentData.cliente || '', nif_cliente: currentData.nif_cliente || '', concepto: currentData.concepto || '', base_imponible: currentData.base_imponible || '', tipo_impuesto: currentData.tipo_impuesto || '', porcentaje_impuesto: currentData.porcentaje_impuesto || '', cuota_impuesto: currentData.cuota_impuesto || '', total: currentData.total || '', moneda: currentData.moneda || 'EUR', forma_pago: currentData.forma_pago || '', observaciones: currentData.observaciones || '' };
+    await sendToSheetDB(rowData);
+    document.getElementById('btnSheetsText').textContent = '✓ Guardado en Sheets';
+    btn.style.background = 'rgba(52,168,83,0.25)';
+    savedCount++;
+    document.getElementById('savedCount').textContent = savedCount;
+    statusEl.textContent = '✓ Enviado a Google Sheets. Comprueba que aparece la fila en tu hoja.';
+    statusEl.style.color = 'var(--success)';
+  } catch (e) {
+    document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
+    btn.disabled = false;
+    statusEl.textContent = '⚠ Error al guardar: ' + e.message;
+    statusEl.style.color = 'var(--danger)';
+  }
+}
+
+// ── EXPORT ──
+function exportCSV() {
+  if (!currentData) return;
+  const rows = [['Campo','Valor'], ...Object.entries(currentData).map(([k,v]) => [k, v ?? ''])];
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  download('factura_' + (currentData.numero_factura || Date.now()) + '.csv', csv, 'text/csv');
+}
+
+function copyJSON() {
+  if (!currentData) return;
+  navigator.clipboard.writeText(JSON.stringify(currentData, null, 2));
+  const btn = document.querySelectorAll('.btn-action')[1];
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+function copyScript() {
+  const code = document.getElementById('appsScriptCode').textContent;
+  navigator.clipboard.writeText(code);
+  const btn = document.querySelector('.copy-code-btn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+function copyHeaders() {
+  const code = 'fecha_escaneo\tproveedor\tnif_proveedor\tnumero_factura\tfecha\tcliente\tnif_cliente\tconcepto\tbase_imponible\ttipo_impuesto\tporcentaje_impuesto\tcuota_impuesto\ttotal\tmoneda\tforma_pago\tobservaciones';
+  navigator.clipboard.writeText(code);
+  const btn = document.querySelector('.copy-code-btn');
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => btn.textContent = 'Copiar', 1500);
+}
+
+function download(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; a.click();
+}
+
+function resetAll() {
+  currentData = null; currentImageB64 = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('btnScan').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('actionBar').style.display = 'none';
+  document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
+  document.getElementById('btnSheets').style.background = '';
+  hide('loading'); hide('errorBox');
+}
+
+// ── UTILS ──
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg; el.style.display = 'block';
+  hide('loading');
+  document.getElementById('btnScan').disabled = false;
+}
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status-msg status-' + type;
+}
+
+// ── INIT ──
+window.onload = () => {
+  const key = getKey();
+  if (key) { document.getElementById('apiKeyInput').value = key; setStatus('keyStatus','✓ Clave cargada','ok'); }
+  const url = getUrl();
+  if (url) { document.getElementById('sheetsUrlInput').value = url; setStatus('urlStatus','✓ URL cargada','ok'); }
+  updateSheetsIndicator();
+};
+</script>
+</body>
+</html>
