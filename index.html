@@ -972,22 +972,22 @@
                   gap:0.4rem 1.5rem;
                 ">
                   <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">A · fecha_escaneo</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">B · proveedor</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">C · nif_proveedor</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">D · numero_factura</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">E · fecha</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">F · cliente</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">G · nif_cliente</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">H · concepto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">I · base_imponible</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">J · tipo_impuesto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">K · porcentaje_impuesto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">L · cuota_impuesto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">M · total</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">N · moneda</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">O · forma_pago</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">P · observaciones</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">Q · tipo_contable</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">B · fecha</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">C · numero_factura</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">D · proveedor</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">E · nif_proveedor</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">F · concepto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">G · base_imponible</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">H · tipo_impuesto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">I · porcentaje_impuesto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">J · cuota_impuesto</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">K · total</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">L · moneda</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">M · tipo_contable</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">N · forma_pago</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">O · cliente</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">P · nif_cliente</span>
+                  <span style="font-size:0.68rem;color:#a0d080;font-family:'DM Mono',monospace;">Q · observaciones</span>
                 </div>
                 <button class="copy-code-btn" onclick="copyHeaders()">Copiar</button>
               </div>
@@ -1011,29 +1011,30 @@
     var sheet = ss.getActiveSheet();
     var cb    = e.parameter.callback || '';
 
-    // Auto-headers si la hoja está vacía
+    // Auto-headers si la hoja está vacía — nuevo orden
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
-        "fecha_escaneo","proveedor","nif_proveedor",
-        "numero_factura","fecha","cliente","nif_cliente",
-        "concepto","base_imponible","tipo_impuesto",
-        "porcentaje_impuesto","cuota_impuesto",
-        "total","moneda","forma_pago","observaciones","tipo_contable"
+        "fecha_escaneo","fecha","numero_factura",
+        "proveedor","nif_proveedor","concepto",
+        "base_imponible","tipo_impuesto","porcentaje_impuesto",
+        "cuota_impuesto","total","moneda",
+        "tipo_contable","forma_pago","cliente",
+        "nif_cliente","observaciones"
       ]);
     }
 
-    // Normaliza: elimina todo lo que no sea alfanumérico para comparar
+    // Normaliza: elimina todo lo que no sea alfanumérico
     function norm(s) {
       return String(s || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     }
 
-    // ── DUPLICATE CHECK: solo por numero_factura (columna D) normalizado ──
+    // ── DUPLICATE CHECK: numero_factura en Columna C (índice 3) ──
     var numFacturaNorm = norm(e.parameter.numero_factura);
 
     if (numFacturaNorm && sheet.getLastRow() > 1) {
-      var colD = sheet.getRange(2, 4, sheet.getLastRow() - 1, 1).getValues();
-      for (var i = 0; i < colD.length; i++) {
-        if (norm(colD[i][0]) === numFacturaNorm) {
+      var colC = sheet.getRange(2, 3, sheet.getLastRow() - 1, 1).getValues();
+      for (var i = 0; i < colC.length; i++) {
+        if (norm(colC[i][0]) === numFacturaNorm) {
           var dupJson = JSON.stringify({status:"error", msg:"DUPLICATE"});
           var dupOut  = cb ? cb + '(' + dupJson + ')' : dupJson;
           return ContentService
@@ -1061,24 +1062,25 @@
     }
 
     var p = e.parameter;
+    // appendRow en el nuevo orden: A-Q
     sheet.appendRow([
-      p.fecha_escaneo          || new Date().toLocaleString("es-ES"),
-      p.proveedor              || "",
-      p.nif_proveedor          || "",
-      p.numero_factura         || "",
-      p.fecha                  || "",
-      p.cliente                || "",
-      p.nif_cliente            || "",
-      p.concepto               || "",
-      toNum(p.base_imponible),
-      p.tipo_impuesto          || "",
-      toNum(p.porcentaje_impuesto),
-      toNum(p.cuota_impuesto),
-      toNum(p.total),
-      p.moneda                 || "EUR",
-      p.forma_pago             || "",
-      p.observaciones          || "",
-      p.tipo_contable          || ""
+      p.fecha_escaneo          || new Date().toLocaleString("es-ES"), // A
+      p.fecha                  || "",                                  // B
+      p.numero_factura         || "",                                  // C
+      p.proveedor              || "",                                  // D
+      p.nif_proveedor          || "",                                  // E
+      p.concepto               || "",                                  // F
+      toNum(p.base_imponible),                                         // G
+      p.tipo_impuesto          || "",                                  // H
+      toNum(p.porcentaje_impuesto),                                    // I
+      toNum(p.cuota_impuesto),                                         // J
+      toNum(p.total),                                                  // K
+      p.moneda                 || "EUR",                               // L
+      p.tipo_contable          || "",                                  // M
+      p.forma_pago             || "",                                  // N
+      p.cliente                || "",                                  // O
+      p.nif_cliente            || "",                                  // P
+      p.observaciones          || ""                                   // Q
     ]);
 
     var json = JSON.stringify({status:"ok"});
@@ -1162,7 +1164,7 @@
           <div style="background:var(--surface);padding:1rem 1.25rem;">
             <div class="field-label" style="margin-bottom:0.5rem;">Total gastos con IVA/IGIC</div>
             <div style="position:relative;">
-              <div class="code-block" id="formula1" style="white-space:nowrap;">=SUMIF(Q:Q,"IVA/IGIC",M:M)</div>
+              <div class="code-block" id="formula1" style="white-space:nowrap;">=SUMIF(M:M,"IVA/IGIC",K:K)</div>
               <button class="copy-code-btn" onclick="copyFormula('formula1',this)">Copiar</button>
             </div>
           </div>
@@ -1170,7 +1172,7 @@
           <div style="background:var(--surface);padding:1rem 1.25rem;">
             <div class="field-label" style="margin-bottom:0.5rem;">Total gastos exentos</div>
             <div style="position:relative;">
-              <div class="code-block" id="formula2" style="white-space:nowrap;">=SUMIF(Q:Q,"EXENTA",M:M)</div>
+              <div class="code-block" id="formula2" style="white-space:nowrap;">=SUMIF(M:M,"EXENTA",K:K)</div>
               <button class="copy-code-btn" onclick="copyFormula('formula2',this)">Copiar</button>
             </div>
           </div>
@@ -1178,7 +1180,7 @@
           <div style="background:var(--surface);padding:1rem 1.25rem;">
             <div class="field-label" style="margin-bottom:0.5rem;">Total general de gastos</div>
             <div style="position:relative;">
-              <div class="code-block" id="formula3" style="white-space:nowrap;">=SUM(M2:M)</div>
+              <div class="code-block" id="formula3" style="white-space:nowrap;">=SUM(K2:K)</div>
               <button class="copy-code-btn" onclick="copyFormula('formula3',this)">Copiar</button>
             </div>
           </div>
@@ -1186,7 +1188,7 @@
           <div style="background:var(--surface);padding:1rem 1.25rem;">
             <div class="field-label" style="margin-bottom:0.5rem;">Total IVA/IGIC a deducir</div>
             <div style="position:relative;">
-              <div class="code-block" id="formula4" style="white-space:nowrap;">=SUM(L2:L)</div>
+              <div class="code-block" id="formula4" style="white-space:nowrap;">=SUM(J2:J)</div>
               <button class="copy-code-btn" onclick="copyFormula('formula4',this)">Copiar</button>
             </div>
           </div>
@@ -1194,7 +1196,7 @@
           <div style="background:var(--surface);padding:1rem 1.25rem;">
             <div class="field-label" style="margin-bottom:0.5rem;">Recuento de facturas</div>
             <div style="position:relative;">
-              <div class="code-block" id="formula5" style="white-space:nowrap;">=COUNTA(D2:D)</div>
+              <div class="code-block" id="formula5" style="white-space:nowrap;">=COUNTA(C2:C)</div>
               <button class="copy-code-btn" onclick="copyFormula('formula5',this)">Copiar</button>
             </div>
           </div>
@@ -1372,12 +1374,13 @@ async function testConnection() {
 
   const testRow = {
     fecha_escaneo: new Date().toLocaleString('es-ES'),
+    fecha: '', numero_factura: 'TEST-0000',
     proveedor: 'TEST-CONEXION', nif_proveedor: '',
-    numero_factura: 'TEST-0000', fecha: '',
-    cliente: '', nif_cliente: '', concepto: 'Prueba de conexión',
+    concepto: 'Prueba de conexión',
     base_imponible: '0', tipo_impuesto: 'IGIC', porcentaje_impuesto: '0',
     cuota_impuesto: '0', total: '0', moneda: 'EUR',
-    forma_pago: '', observaciones: 'Borrar esta fila', tipo_contable: 'EXENTA'
+    tipo_contable: 'EXENTA', forma_pago: '',
+    cliente: '', nif_cliente: '', observaciones: 'Borrar esta fila'
   };
 
   try {
@@ -1622,24 +1625,27 @@ function collectDomData() {
     val = val.replace(/ €$/, '').replace(/%$/, '').replace(/^—$/, '');
     domValues[el.dataset.field] = val;
   });
+  // Order matches new column layout A→Q for readability
+  // URLSearchParams sends as key=value pairs so column order is irrelevant —
+  // Apps Script places each value by its key name, not position
   return {
-    fecha_escaneo: new Date().toLocaleString('es-ES'),
-    proveedor: domValues.proveedor || '',
-    nif_proveedor: domValues.nif_proveedor || '',
-    numero_factura: domValues.numero_factura || '',
-    fecha: domValues.fecha || '',
-    cliente: domValues.cliente || '',
-    nif_cliente: domValues.nif_cliente || '',
-    concepto: domValues.concepto || '',
-    base_imponible: domValues.base_imponible || '',
-    tipo_impuesto: domValues.tipo_impuesto || '',
-    porcentaje_impuesto: domValues.porcentaje_impuesto || '',
-    cuota_impuesto: domValues.cuota_impuesto || '',
-    total: domValues.total || '',
-    moneda: domValues.moneda || 'EUR',
-    forma_pago: domValues.forma_pago || '',
-    observaciones: domValues.observaciones || '',
-    tipo_contable: domValues.tipo_contable || currentData.tipo_contable || ''
+    fecha_escaneo:       new Date().toLocaleString('es-ES'),  // A
+    fecha:               domValues.fecha               || '',  // B
+    numero_factura:      domValues.numero_factura      || '',  // C
+    proveedor:           domValues.proveedor           || '',  // D
+    nif_proveedor:       domValues.nif_proveedor       || '',  // E
+    concepto:            domValues.concepto            || '',  // F
+    base_imponible:      domValues.base_imponible      || '',  // G
+    tipo_impuesto:       domValues.tipo_impuesto       || '',  // H
+    porcentaje_impuesto: domValues.porcentaje_impuesto || '',  // I
+    cuota_impuesto:      domValues.cuota_impuesto      || '',  // J
+    total:               domValues.total               || '',  // K
+    moneda:              domValues.moneda              || 'EUR',// L
+    tipo_contable:       domValues.tipo_contable || currentData.tipo_contable || '', // M
+    forma_pago:          domValues.forma_pago          || '',  // N
+    cliente:             domValues.cliente             || '',  // O
+    nif_cliente:         domValues.nif_cliente         || '',  // P
+    observaciones:       domValues.observaciones       || ''   // Q
   };
 }
 
@@ -1762,7 +1768,7 @@ function copyFormula(id, btn) {
 }
 
 function copyHeaders() {
-  const code = 'fecha_escaneo\tproveedor\tnif_proveedor\tnumero_factura\tfecha\tcliente\tnif_cliente\tconcepto\tbase_imponible\ttipo_impuesto\tporcentaje_impuesto\tcuota_impuesto\ttotal\tmoneda\tforma_pago\tobservaciones\ttipo_contable';
+  const code = 'fecha_escaneo\tfecha\tnumero_factura\tproveedor\tnif_proveedor\tconcepto\tbase_imponible\ttipo_impuesto\tporcentaje_impuesto\tcuota_impuesto\ttotal\tmoneda\ttipo_contable\tforma_pago\tcliente\tnif_cliente\tobservaciones';
   navigator.clipboard.writeText(code);
   const btn = document.querySelector('.copy-code-btn');
   btn.textContent = '✓ Copiado';
