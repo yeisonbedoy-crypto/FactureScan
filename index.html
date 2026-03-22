@@ -1059,6 +1059,10 @@ tailwind.config = {
 </div>
 
 <script>
+// ── STORAGE HELPERS ──
+function getKey() { return localStorage.getItem('factura_key') || ''; }
+function getUrl() { return localStorage.getItem('factura_sheets_url') || ''; }
+
 async function sendToSheetDB(rowData) {
   const url = getUrl();
   if (!url) throw new Error('No hay URL configurada');
