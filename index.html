@@ -3,1326 +3,755 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>FacturaScan v2 — con Google Sheets</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&family=Geist+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<title>FacturaScan</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'Georgia', 'serif'],
+      },
+      colors: {
+        stripe: {
+          purple: '#635bff',
+          pink:   '#ff6f6f',
+          orange: '#ff9f43',
+        }
+      },
+      borderRadius: { xl2: '1rem', xl3: '1.5rem' },
+      boxShadow: {
+        card: '0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.05)',
+        'card-hover': '0 8px 24px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06)',
+        float: '0 -4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
+      }
+    }
+  }
+}
+</script>
 <style>
   :root {
-    --bg:            #0c0d0e;
-    --surface:       #16181a;
-    --surface2:      #1e2124;
-    --surface3:      #252a2e;
-    --border:        #2a2f34;
-    --border2:       #343b42;
-    --accent:        #10b981;
-    --accent-dim:    rgba(16, 185, 129, 0.12);
-    --accent-glow:   rgba(16, 185, 129, 0.25);
-    --accent2:       #3b82f6;
-    --accent2-dim:   rgba(59, 130, 246, 0.12);
-    --text:          #e8eaed;
-    --text2:         #9aa3ad;
-    --muted:         #5a6370;
-    --danger:        #ef4444;
-    --danger-dim:    rgba(239, 68, 68, 0.10);
-    --success:       #10b981;
-    --warning:       #f59e0b;
-    --warning-dim:   rgba(245, 158, 11, 0.12);
-    --sheets:        #10b981;
-    --sheets-bg:     rgba(16, 185, 129, 0.10);
-    --sheets-border: rgba(16, 185, 129, 0.25);
-    --radius:        12px;
-    --radius-sm:     8px;
-    --radius-xs:     6px;
-    --shadow:        0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.25);
-    --shadow-lg:     0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
-    --font-ui:       'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-mono:     'Geist Mono', 'DM Mono', monospace;
-    --font-display:  'Fraunces', Georgia, serif;
+    --safe-top:    env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   html { overflow-x: hidden; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-mono);
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f6f9fc;
+    color: #1a1f36;
     min-height: 100vh;
   }
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 999;
+  /* Gradient hero stripe at top */
+  .hero-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, #635bff 0%, #ff6f6f 40%, #ff9f43 70%, #ffcd3c 100%);
   }
 
+  /* Header */
   header {
-    padding: 1rem 2rem;
-    padding-top: calc(1rem + env(safe-area-inset-top));
-    border-bottom: 1px solid var(--border);
+    background: white;
+    border-bottom: 1px solid #e6ebf1;
+    padding: calc(0.9rem + var(--safe-top)) 1.5rem 0.9rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(22,24,26,0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     position: sticky;
     top: 0;
     z-index: 100;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
-  .header-left { display: flex; align-items: center; gap: 0.75rem; }
-
   .logo {
-    font-family: var(--font-display);
-    font-size: 1.35rem;
+    font-family: 'Inter', sans-serif;
     font-weight: 700;
-    color: var(--accent);
+    font-size: 1.15rem;
+    color: #1a1f36;
     letter-spacing: -0.03em;
   }
 
-  .logo-tag {
-    font-size: 0.58rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    border: 1px solid var(--border2);
-    padding: 0.2rem 0.55rem;
-    border-radius: 20px;
-    font-family: var(--font-mono);
-  }
+  .logo span { color: #635bff; }
 
-  .sheets-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.62rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-family: var(--font-mono);
-  }
+  .header-badges { display: flex; align-items: center; gap: 0.5rem; }
 
-  .sheets-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: all 0.4s;
+  .badge-pill {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.72rem; font-weight: 500;
+    padding: 0.3rem 0.7rem;
+    border-radius: 99px;
+    border: 1px solid #e6ebf1;
+    background: white;
+    color: #697386;
   }
-
-  .sheets-dot.connected {
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
-    animation: pulse-dot 2.5s ease-in-out infinite;
+  .badge-pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #c4c9d4;
+    transition: background 0.3s;
   }
+  .badge-pill .dot.on { background: #09c97f; box-shadow: 0 0 0 3px rgba(9,201,127,0.15); }
 
-  @keyframes pulse-dot {
-    0%, 100% { box-shadow: 0 0 4px var(--accent-glow); }
-    50%       { box-shadow: 0 0 12px var(--accent-glow); }
-  }
-
+  /* Main */
   .main {
-    max-width: 880px;
-    width: 100%;
+    max-width: 680px;
     margin: 0 auto;
-    padding: 2rem 1.75rem;
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
-    display: grid;
-    gap: 1.25rem;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 1;
+    padding: 1.5rem 1rem calc(5rem + var(--safe-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
-  /* ── TABS ── */
+  /* Tabs */
   .tabs {
     display: flex;
     gap: 0.25rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.25rem;
-    box-shadow: var(--shadow);
+    background: white;
+    border: 1px solid #e6ebf1;
+    border-radius: 10px;
+    padding: 0.3rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
-
   .tab {
-    flex: 1;
-    padding: 0.55rem 1rem;
-    font-size: 0.72rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
+    flex: 1; text-align: center;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.8rem; font-weight: 500;
+    border-radius: 7px;
     cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
-    text-align: center;
-    font-family: var(--font-mono);
+    color: #697386;
+    transition: all 0.15s;
+    border: none; background: none;
   }
-
-  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab:hover { color: #1a1f36; background: #f6f9fc; }
   .tab.active {
-    color: var(--accent);
-    background: var(--accent-dim);
-    box-shadow: inset 0 0 0 1px var(--accent-glow);
+    background: #635bff;
+    color: white;
+    box-shadow: 0 2px 8px rgba(99,91,255,0.3);
   }
+  .tab-panel { display: none; flex-direction: column; gap: 1rem; }
+  .tab-panel.active { display: flex; animation: fadeUp 0.2s ease; }
 
-  .tab-panel { display: none; }
-  .tab-panel.active { display: grid; gap: 1.25rem; animation: fadeIn 0.2s ease; }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: none; }
   }
 
-  /* ── CARDS ── */
+  /* Cards */
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    background: white;
+    border: 1px solid #e6ebf1;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     overflow: hidden;
-    min-width: 0;
-    max-width: 100%;
-    box-shadow: var(--shadow);
-    transition: border-color 0.2s;
   }
-
-  .card:focus-within { border-color: var(--border2); }
-
   .card-header {
     padding: 0.85rem 1.25rem;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    border-bottom: 1px solid #f0f3f8;
+    display: flex; justify-content: space-between; align-items: center;
   }
-
   .card-title {
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text2);
-    font-family: var(--font-mono);
+    font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: #8792a2;
   }
-
   .card-body { padding: 1.25rem; }
 
-  /* ── SETUP STEPS ── */
-  .steps { display: grid; gap: 1.5rem; }
-
-  .step {
-    display: grid;
-    grid-template-columns: 2rem 1fr;
-    gap: 1rem;
-    align-items: start;
-    min-width: 0;
-  }
-
-  .step-content {
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .step-num {
-    width: 2rem; height: 2rem;
-    border-radius: 50%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.72rem;
-    color: var(--accent);
-    flex-shrink: 0;
-    font-weight: 500;
-  }
-
-  .step-num.done {
-    background: rgba(200,240,96,0.15);
-    border-color: var(--accent);
-  }
-
-  .step-content {}
-
-  .step-title {
-    font-size: 0.88rem;
-    color: var(--text);
-    margin-bottom: 0.4rem;
-    font-weight: 600;
-    word-break: break-word;
-    font-family: var(--font-ui);
-  }
-
-  .step-desc {
-    font-size: 0.7rem;
-    color: var(--muted);
-    line-height: 1.7;
-    margin-bottom: 0.75rem;
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
-
-  .step-desc a {
-    color: var(--accent);
-    text-decoration: none;
-  }
-
-  .step-desc a:hover { text-decoration: underline; }
-
-  /* Code block */
-  .code-block {
-    background: #0a0a08;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+  /* API mini */
+  .api-mini {
+    background: white;
+    border: 1px solid #e6ebf1;
+    border-left: 3px solid #635bff;
+    border-radius: 12px;
     padding: 1rem 1.25rem;
-    font-size: 0.68rem;
-    color: #a0d080;
-    line-height: 1.8;
-    overflow-x: auto;
-    white-space: pre;
-    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .api-mini-title {
+    font-size: 0.68rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: #635bff; margin-bottom: 0.65rem;
   }
 
-  .copy-code-btn {
-    position: absolute;
-    top: 0.6rem; right: 0.6rem;
-    padding: 0.3rem 0.6rem;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    transition: all 0.15s;
-  }
-
-  .copy-code-btn:hover { color: var(--accent); border-color: var(--accent); }
-
-  /* Input row */
-  .input-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    min-width: 0;
-  }
-
+  /* Inputs */
   .field-input {
-    flex: 1;
-    min-width: 0;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-xs);
+    width: 100%;
+    background: #f6f9fc;
+    border: 1.5px solid #e6ebf1;
+    border-radius: 8px;
     padding: 0.65rem 0.9rem;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: #1a1f36;
     outline: none;
-    transition: all 0.2s;
-    word-break: break-all;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-
   .field-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-    background: var(--surface3);
+    border-color: #635bff;
+    box-shadow: 0 0 0 3px rgba(99,91,255,0.12);
+    background: white;
   }
-  .field-input::placeholder { color: var(--muted); }
+  .field-input::placeholder { color: #c1c9d4; }
 
-  .btn-sm {
-    padding: 0.6rem 1rem;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
+  /* Buttons */
+  .btn-primary {
+    background: #635bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.25rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem; font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.01em;
     white-space: nowrap;
   }
+  .btn-primary:hover { background: #4f46e5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,91,255,0.35); }
+  .btn-primary:active { transform: none; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
-
-  .hint {
-    font-size: 0.63rem;
-    color: var(--muted);
-    margin-top: 0.4rem;
-    line-height: 1.6;
-    word-break: break-word;
-    overflow-wrap: break-word;
+  .btn-secondary {
+    background: white;
+    color: #3c4257;
+    border: 1.5px solid #e6ebf1;
+    border-radius: 8px;
+    padding: 0.7rem 1.25rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
   }
+  .btn-secondary:hover { border-color: #c1c9d4; background: #f6f9fc; }
 
-  .status-msg {
-    font-size: 0.65rem;
-    margin-top: 0.4rem;
-    word-break: break-word;
-    overflow-wrap: break-word;
+  .btn-scan {
+    display: none;
+    width: 100%;
+    padding: 0.9rem;
+    background: linear-gradient(135deg, #635bff 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(99,91,255,0.35);
+    letter-spacing: 0.01em;
   }
-  .status-ok { color: var(--accent); font-weight: 500; }
-  .status-err { color: var(--danger); font-weight: 500; }
-  .status-info { color: var(--accent2); font-weight: 500; }
+  .btn-scan:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,91,255,0.4); }
+  .btn-scan:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-  /* ── UPLOAD ZONE ── */
+  /* Upload zone */
   .upload-zone {
-    border: 2px dashed var(--border2);
-    border-radius: var(--radius);
+    border: 2px dashed #d0d7e3;
+    border-radius: 14px;
     padding: 2.5rem 1.5rem;
     text-align: center;
     cursor: pointer;
-    transition: all 0.25s ease;
-    background: var(--surface);
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow);
+    background: white;
+    transition: all 0.2s;
   }
-
-  .upload-zone::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.05) 0%, transparent 65%);
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-
   .upload-zone:hover, .upload-zone.dragover {
-    border-color: var(--accent);
-    background: rgba(16,185,129,0.04);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px var(--accent-glow);
+    border-color: #635bff;
+    background: rgba(99,91,255,0.03);
+    box-shadow: 0 0 0 4px rgba(99,91,255,0.08);
   }
-
-  .upload-zone.dragover { transform: scale(1.01); }
-
-  .upload-icon {
-    font-size: 2.25rem;
-    margin-bottom: 0.85rem;
-    display: block;
-    filter: grayscale(0.2);
-  }
-
-  .upload-title {
-    font-family: var(--font-display);
-    font-size: 1.15rem;
-    color: var(--text);
-    margin-bottom: 0.4rem;
-    font-weight: 600;
-  }
-
-  .upload-sub {
-    font-size: 0.7rem;
-    color: var(--text2);
-    line-height: 1.9;
-    font-family: var(--font-mono);
-  }
-
-  #fileInput { display: none; }
+  .upload-icon { font-size: 2.25rem; margin-bottom: 0.75rem; display: block; }
+  .upload-title { font-size: 1.05rem; font-weight: 600; color: #1a1f36; margin-bottom: 0.4rem; }
+  .upload-sub { font-size: 0.78rem; color: #8792a2; line-height: 1.6; }
 
   /* Preview */
   .preview-area {
     display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    background: white;
+    border: 1px solid #e6ebf1;
+    border-radius: 12px;
     overflow: hidden;
   }
-
   .preview-header {
-    padding: 0.7rem 1.25rem;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    font-size: 0.68rem;
-    color: var(--muted);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 0.65rem 1.1rem;
+    background: #f6f9fc;
+    border-bottom: 1px solid #e6ebf1;
+    font-size: 0.72rem; color: #8792a2;
+    display: flex; justify-content: space-between;
   }
-
-  .preview-header span { color: var(--accent2); }
-
-  #previewImg {
-    width: 100%;
-    max-height: 280px;
-    object-fit: contain;
-    display: block;
-    background: #0a0a08;
-  }
-
-  /* Button */
-  .btn-scan {
-    display: none;
-    width: 100%;
-    padding: 0.95rem 1.5rem;
-    background: var(--accent);
-    color: #0a1f16;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-family: var(--font-ui);
-    font-size: 0.88rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 0 0 0 var(--accent-glow);
-  }
-
-  .btn-scan:hover {
-    background: #0ea572;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16,185,129,0.35);
-  }
-  .btn-scan:active { transform: translateY(0); box-shadow: none; }
-  .btn-scan:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+  #previewImg { width: 100%; max-height: 260px; object-fit: contain; display: block; background: #f6f9fc; }
 
   /* Loading */
   .loading {
     display: none;
-    padding: 2.5rem;
+    padding: 2rem;
     text-align: center;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    background: white;
+    border: 1px solid #e6ebf1;
+    border-radius: 14px;
   }
-
-  .loading-dots { display: inline-flex; gap: 8px; margin-bottom: 1.25rem; }
-
+  .loading-dots { display: inline-flex; gap: 6px; margin-bottom: 0.75rem; }
   .dot {
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.4s ease-in-out infinite;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #635bff;
+    animation: pulse 1.2s ease-in-out infinite;
   }
-
-  .dot:nth-child(2) { animation-delay: 0.22s; background: var(--accent2); }
-  .dot:nth-child(3) { animation-delay: 0.44s; }
-
+  .dot:nth-child(2) { animation-delay: 0.2s; background: #ff6f6f; }
+  .dot:nth-child(3) { animation-delay: 0.4s; background: #ff9f43; }
   @keyframes pulse {
-    0%, 100% { opacity: 0.15; transform: scale(0.7); }
-    50% { opacity: 1; transform: scale(1.3); }
+    0%,100% { opacity: 0.2; transform: scale(0.7); }
+    50%      { opacity: 1;   transform: scale(1.2); }
   }
-
-  .loading-text {
-    font-size: 0.72rem;
-    color: var(--text2);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-family: var(--font-mono);
-  }
-
-  /* Results */
-  .results {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    animation: fadeIn 0.3s ease;
-  }
-
-  .results-header {
-    padding: 1rem 1.5rem;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .results-title {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: -0.01em;
-  }
-
-  .badge {
-    font-size: 0.6rem;
-    font-weight: 600;
-    padding: 0.25rem 0.7rem;
-    border-radius: 20px;
-    background: rgba(16,185,129,0.12);
-    color: var(--accent);
-    border: 1px solid rgba(16,185,129,0.25);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-family: var(--font-mono);
-  }
-
-  .fields-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
-    gap: 1px;
-    background: var(--border);
-  }
-
-  .field {
-    background: var(--surface);
-    padding: 1rem 1.25rem;
-    transition: background 0.15s;
-  }
-
-  .field:hover { background: var(--surface2); }
-
-  .field-label {
-    font-size: 0.58rem;
-    font-weight: 600;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.3rem;
-    font-family: var(--font-mono);
-  }
-
-  .field-value {
-    font-size: 0.88rem;
-    font-family: var(--font-ui);
-    color: var(--text);
-    word-break: break-word;
-    border: 1px solid transparent;
-    border-radius: var(--radius-xs);
-    padding: 0.25rem 0.4rem;
-    margin: -0.25rem -0.4rem;
-    transition: border-color 0.15s, background 0.15s;
-    cursor: text;
-    min-height: 1.5em;
-    line-height: 1.5;
-  }
-  .field-value:hover {
-    border-color: var(--border2);
-    background: var(--surface2);
-  }
-  .field-value:focus {
-    border-color: var(--accent) !important;
-    background: var(--surface2);
-    outline: none;
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-  .field-value.highlight {
-    font-family: var(--font-display);
-    font-size: 1.3rem;
-    color: var(--accent);
-    font-weight: 600;
-  }
-  .field-value.empty { color: var(--muted); font-style: italic; }
-  .field-value.error {
-    border-color: var(--danger) !important;
-    background: var(--danger-dim) !important;
-    color: var(--danger);
-  }
-  .validation-warning {
-    padding: 0.75rem 1.25rem;
-    background: var(--danger-dim);
-    border-bottom: 1px solid rgba(239,68,68,0.2);
-    border-left: 3px solid var(--danger);
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: var(--danger);
-    display: none;
-    align-items: center;
-    gap: 0.6rem;
-    letter-spacing: 0.01em;
-  }
-
-  .obs-section {
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--border);
-    background: var(--warning-dim);
-  }
-
-  .obs-label { font-size: 0.6rem; font-weight: 600; color: var(--warning); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; font-family: var(--font-mono); }
-  .obs-text { font-size: 0.75rem; color: var(--muted); line-height: 1.7; }
-
-  /* Action bar */
-  .action-bar {
-    display: none;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-
-  .btn-sheets {
-    flex: 2;
-    min-width: 160px;
-    padding: 0.85rem 1rem;
-    border-radius: var(--radius-xs);
-    border: 1px solid var(--sheets-border);
-    background: var(--sheets-bg);
-    color: var(--accent);
-    font-family: var(--font-ui);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-sheets:hover {
-    background: rgba(16,185,129,0.2);
-    border-color: var(--accent);
-    box-shadow: 0 4px 16px rgba(16,185,129,0.2);
-    transform: translateY(-1px);
-  }
-  .btn-sheets:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-
-  .btn-action {
-    flex: 1;
-    min-width: 100px;
-    padding: 0.8rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-  }
-
-  .btn-action:hover { border-color: var(--accent); color: var(--accent); background: rgba(200,240,96,0.05); }
-
-  .btn-new {
-    flex: 1;
-    min-width: 100px;
-    padding: 0.8rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-  }
-
-  .btn-new:hover { color: var(--text); border-color: var(--text); }
-
-  .sheets-save-status {
-    width: 100%;
-    font-size: 0.65rem;
-    padding: 0.5rem 0;
-    text-align: center;
-  }
+  .loading-text { font-size: 0.8rem; color: #8792a2; font-weight: 500; }
 
   /* Error */
   .error-box {
     display: none;
+    padding: 0.9rem 1.1rem;
+    background: #fff5f5;
+    border: 1px solid #fecdd3;
+    border-radius: 10px;
+    font-size: 0.78rem; color: #e11d48; line-height: 1.5;
+  }
+
+  /* Results */
+  .results { display: none; background: white; border: 1px solid #e6ebf1; border-radius: 14px; overflow: hidden; animation: fadeUp 0.25s ease; }
+  .results-header {
     padding: 1rem 1.25rem;
-    background: var(--danger-dim);
-    border: 1px solid rgba(239,68,68,0.2);
-    border-left: 3px solid var(--danger);
-    border-radius: var(--radius-sm);
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--danger);
-    line-height: 1.6;
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+    border-bottom: 1px solid #f0f3f8;
+  }
+  .results-title { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 700; color: #1a1f36; }
+  .badge-ok {
+    font-size: 0.65rem; font-weight: 600; padding: 0.25rem 0.65rem;
+    border-radius: 99px; background: #ecfdf5; color: #059669;
+    border: 1px solid #a7f3d0; letter-spacing: 0.05em;
   }
 
-  /* Counter badge */
-  .counter {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.62rem;
-    color: var(--text2);
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    padding: 0.3rem 0.75rem;
-    border-radius: 20px;
-    font-family: var(--font-mono);
-    transition: all 0.2s;
+  .edit-hint {
+    padding: 0.55rem 1.25rem;
+    background: #fffbeb;
+    border-bottom: 1px solid #fef3c7;
+    font-size: 0.7rem; color: #92400e; font-weight: 500;
+    display: flex; align-items: center; gap: 0.4rem;
   }
 
-  .counter-num { color: var(--accent); font-weight: 600; }
-
-  /* Divider */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: var(--muted);
-    font-size: 0.62rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+  /* Validation warning */
+  .validation-warning {
+    display: none;
+    padding: 0.85rem 1.25rem;
+    background: #fff5f5;
+    border-bottom: 2px solid #f87171;
+    font-size: 0.75rem; font-weight: 600;
+    color: #dc2626;
+    align-items: center; gap: 0.6rem;
   }
+  .validation-warning::before { content: "⚠"; font-size: 1rem; flex-shrink: 0; }
 
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
+  /* Fields grid */
+  .fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1px;
+    background: #f0f3f8;
   }
-
-  /* API section inside scan tab */
-  .api-mini {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent2);
-    border-radius: 6px;
-    padding: 1rem 1.25rem;
+  .field {
+    background: white;
+    padding: 0.9rem 1.1rem;
+    transition: background 0.12s;
   }
-
-  .api-mini-title {
-    font-size: 0.62rem;
-    color: var(--accent2);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.6rem;
+  .field:hover { background: #fafbff; }
+  .field-label {
+    font-size: 0.62rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: #8792a2; margin-bottom: 0.3rem;
+    display: flex; align-items: center; gap: 0.3rem;
   }
-
-  @media (max-width: 600px) {
-    /* ── Layout base ── */
-    body { overflow-x: hidden; }
-
-    header {
-      padding: 0.8rem 1rem;
-      padding-top: calc(0.8rem + env(safe-area-inset-top));
-      flex-wrap: wrap;
-      gap: 0.4rem;
-    }
-    .header-left { gap: 0.5rem; }
-    .logo { font-size: 1.1rem; }
-    .logo-tag { font-size: 0.55rem; padding: 0.15rem 0.4rem; }
-    .sheets-indicator { font-size: 0.58rem; gap: 0.3rem; }
-    .counter { font-size: 0.58rem; padding: 0.2rem 0.5rem; }
-
-    .main {
-      padding: 1rem;
-      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-      gap: 1.25rem;
-    }
-
-    /* ── Tabs ── */
-    .tabs { gap: 0; }
-    .tab { padding: 0.6rem 0.9rem; font-size: 0.65rem; }
-
-    /* ── Steps in setup ── */
-    .steps { gap: 1.25rem; }
-    .step { grid-template-columns: 1.75rem 1fr; gap: 0.75rem; }
-    .step-num { width: 1.75rem; height: 1.75rem; font-size: 0.65rem; }
-    .step-title { font-size: 0.78rem; }
-    .step-desc { font-size: 0.68rem; }
-
-    /* ── Code blocks: scroll horizontal pero NO desborda el padre ── */
-    .code-block {
-      font-family: var(--font-mono);
-      font-size: 0.62rem;
-      overflow-x: auto;
-      white-space: pre;
-      -webkit-overflow-scrolling: touch;
-      max-width: 100%;
-    }
-
-    /* ── Headers grid: una columna en móvil ── */
-    #headersCode {
-      grid-template-columns: 1fr !important;
-    }
-
-    /* ── Cards ── */
-    .card-header { padding: 0.7rem 1rem; }
-    .card-title { font-size: 0.63rem; }
-    .card-body { padding: 1rem; }
-
-    /* ── Input rows ── */
-    .input-row { flex-direction: column; }
-    .input-row .field-input { font-size: 16px; }
-    .input-row .btn-sm { width: 100%; }
-    .btn-sm { font-size: 0.68rem; padding: 0.6rem 0.9rem; }
-
-    /* ── Upload zone ── */
-    .upload-zone { padding: 1.75rem 1rem; }
-    .upload-icon { font-size: 1.75rem; }
-    .upload-title { font-size: 1rem; }
-    .upload-sub { font-size: 0.65rem; }
-
-    /* ── Results grid ── */
-    .fields-grid { grid-template-columns: 1fr 1fr; }
-    .field { padding: 0.85rem 1rem; }
-    .field-label { font-size: 0.58rem; }
-    .field-value { font-size: 16px; }
-    .field-value.highlight { font-size: 1.1rem; }
-
-    /* ── Action bar ── */
-    .action-bar { flex-direction: column; gap: 0.5rem; }
-    .btn-sheets, .btn-action, .btn-new { flex: unset; width: 100%; padding: 0.85rem; }
-
-    /* ── Modal ── */
-    .modal { width: 92vw; }
-    .modal-body { padding: 0.85rem 1rem; max-height: 55vh; overflow-y: auto; }
-    .modal-row { font-size: 0.75rem; padding: 0.4rem 0; }
-    .modal-footer { padding: 0.85rem 1rem; flex-direction: column; gap: 0.5rem; }
-    .btn-confirm, .btn-cancel-modal { width: 100%; }
-
-    /* ── API notice ── */
-    .api-mini { padding: 0.85rem 1rem; }
-    .api-mini-title { font-size: 0.6rem; }
-
-    /* ── Restore notice ── */
-    #restoreNotice { font-size: 0.65rem; flex-wrap: wrap; }
+  .field-icon { font-size: 0.65rem; opacity: 0.7; }
+  .field-value {
+    font-size: 16px; color: #1a1f36; word-break: break-word;
+    border: 1.5px solid transparent; border-radius: 6px;
+    padding: 0.2rem 0.35rem; margin: -0.2rem -0.35rem;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: text; min-height: 1.4em; outline: none;
+    font-family: 'Inter', sans-serif;
   }
+  .field-value:hover { border-color: #e6ebf1; background: #f6f9fc; }
+  .field-value:focus { border-color: #635bff !important; background: white; box-shadow: 0 0 0 3px rgba(99,91,255,0.1); }
+  .field-value.highlight { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 700; color: #635bff; }
+  .field-value.empty { color: #c1c9d4; font-style: italic; font-size: 0.85rem; }
+  .field-value.error { border-color: #f87171 !important; background: #fff5f5; color: #dc2626; }
 
-  @media (max-width: 380px) {
-    .fields-grid { grid-template-columns: 1fr; }
-    .tabs { overflow-x: auto; }
-  }
+  .obs-section { padding: 0.9rem 1.1rem; border-top: 1px solid #f0f3f8; background: #fffbeb; }
+  .obs-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #92400e; margin-bottom: 0.4rem; }
+  .obs-text { font-size: 0.78rem; color: #78350f; line-height: 1.6; }
 
-  /* ── CONFIRM MODAL ── */
-  .modal-overlay {
+  /* Sticky action bar */
+  .sticky-bar {
     display: none;
     position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    bottom: 0; left: 0; right: 0;
+    padding: 0.85rem 1.25rem calc(0.85rem + var(--safe-bottom));
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid #e6ebf1;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+    z-index: 200;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .sticky-bar.visible { display: flex; animation: slideUp 0.2s ease; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .btn-sheets {
+    flex: 2; min-width: 140px;
+    padding: 0.8rem 1rem;
+    background: #09c97f;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 3px 10px rgba(9,201,127,0.3);
+  }
+  .btn-sheets:hover { background: #059669; transform: translateY(-1px); }
+  .btn-sheets:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-action {
+    flex: 1;
+    padding: 0.8rem 0.75rem;
+    background: white;
+    color: #3c4257;
+    border: 1.5px solid #e6ebf1;
+    border-radius: 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-action:hover { border-color: #c1c9d4; background: #f6f9fc; }
+
+  .btn-new {
+    flex: 1;
+    padding: 0.8rem 0.75rem;
+    background: white;
+    color: #8792a2;
+    border: 1.5px solid #e6ebf1;
+    border-radius: 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-new:hover { color: #1a1f36; border-color: #c1c9d4; }
+
+  .sheets-save-status {
+    width: 100%; font-size: 0.7rem; font-weight: 500; text-align: center;
+    padding: 0.25rem 0;
+  }
+
+  /* Hint / status */
+  .hint { font-size: 0.7rem; color: #8792a2; margin-top: 0.4rem; line-height: 1.6; word-break: break-word; }
+  .status-msg { font-size: 0.72rem; margin-top: 0.4rem; word-break: break-word; font-weight: 500; }
+  .status-ok  { color: #059669; }
+  .status-err { color: #dc2626; }
+  .status-info { color: #635bff; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 1.25rem; }
+  .step { display: grid; grid-template-columns: 2rem 1fr; gap: 0.85rem; align-items: start; min-width: 0; }
+  .step-num {
+    width: 2rem; height: 2rem; border-radius: 50%;
+    background: #f0f0ff; border: 1.5px solid #635bff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; color: #635bff; flex-shrink: 0;
+  }
+  .step-content { min-width: 0; }
+  .step-title { font-size: 0.85rem; font-weight: 600; color: #1a1f36; margin-bottom: 0.35rem; word-break: break-word; }
+  .step-desc { font-size: 0.75rem; color: #697386; line-height: 1.7; margin-bottom: 0.65rem; word-break: break-word; overflow-wrap: break-word; }
+  .step-desc a { color: #635bff; text-decoration: none; font-weight: 500; }
+  .step-desc a:hover { text-decoration: underline; }
+
+  /* Code blocks */
+  .code-block {
+    background: #1a1f36;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    font-family: 'Geist Mono', 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: #7dd3fc;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+  }
+  .copy-code-btn {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    padding: 0.25rem 0.6rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 5px;
+    color: #94a3b8;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.62rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .copy-code-btn:hover { background: rgba(255,255,255,0.18); color: white; }
+
+  /* Btn-sm */
+  .btn-sm {
+    padding: 0.6rem 1rem;
+    background: white;
+    border: 1.5px solid #e6ebf1;
+    border-radius: 7px;
+    color: #3c4257;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-sm:hover { border-color: #635bff; color: #635bff; }
+
+  .input-row { display: flex; gap: 0.5rem; align-items: center; min-width: 0; }
+  .input-row .field-input { font-size: 16px; min-width: 0; }
+
+  /* Setup accordion */
+  .setup-connected-bar {
+    display: none; padding: 0.9rem 1.25rem;
+    align-items: center; gap: 0.75rem;
+    cursor: pointer; transition: background 0.15s;
+    background: white; border-radius: 12px;
+    border: 1px solid #e6ebf1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .setup-connected-bar:hover { background: #fafbff; }
+  .setup-connected-bar.visible { display: flex; }
+  .setup-conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #09c97f; box-shadow: 0 0 0 3px rgba(9,201,127,0.2); }
+  .setup-conn-label { font-size: 0.82rem; font-weight: 600; color: #1a1f36; flex: 1; }
+  .setup-conn-edit { font-size: 0.72rem; font-weight: 500; color: #635bff; }
+  .setup-details { transition: opacity 0.2s ease; }
+  .setup-details.collapsed { display: none; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,31,54,0.5);
+    z-index: 300; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    padding: calc(env(safe-area-inset-top) + 1rem) 1rem calc(env(safe-area-inset-bottom) + 1rem);
   }
   .modal-overlay.open { display: flex; }
   .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    width: min(480px, 90vw);
+    background: white; border-radius: 16px;
+    width: min(480px, 92vw);
     overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
     animation: modalIn 0.2s ease;
   }
-  @keyframes modalIn {
-    from { opacity: 0; transform: translateY(12px) scale(0.97); }
-    to   { opacity: 1; transform: none; }
-  }
-  .modal-header {
-    padding: 1.25rem 1.5rem;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .modal-title { font-family: var(--font-display); font-size: 1rem; color: var(--text); }
-  .modal-close { background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer; padding:0.25rem; }
-  .modal-close:hover { color: var(--text); }
-  .modal-body { padding: 1.25rem 1.5rem; }
-  .modal-row {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.78rem;
-  }
-  .modal-row:last-child { border-bottom: none; }
-  .modal-row-label { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; }
-  .modal-row-value { color: var(--text); text-align: right; max-width: 60%; word-break: break-word; }
-  .modal-row-value.big { font-family: var(--font-display); font-size: 1.2rem; color: var(--accent); }
-  .modal-row-value.tag {
-    font-size: 0.62rem; padding: 0.2rem 0.6rem; border-radius: 20px;
-    background: rgba(200,240,96,0.15); color: var(--accent);
-    border: 1px solid rgba(200,240,96,0.3); text-transform: uppercase;
-  }
-  .modal-row-value.tag.exenta {
-    background: rgba(240,200,96,0.15); color: var(--accent2);
-    border-color: rgba(240,200,96,0.3);
-  }
-  .modal-footer {
-    padding: 1rem 1.5rem;
-    background: var(--surface2);
-    border-top: 1px solid var(--border);
-    display: flex; gap: 0.75rem;
-  }
+  @keyframes modalIn { from { opacity:0; transform: scale(0.96) translateY(8px); } to { opacity:1; transform: none; } }
+  .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f0f3f8; display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 700; color: #1a1f36; }
+  .modal-close { background: none; border: none; color: #c1c9d4; font-size: 1.2rem; cursor: pointer; transition: color 0.15s; }
+  .modal-close:hover { color: #697386; }
+  .modal-body { padding: 1.1rem 1.5rem; }
+  .modal-row { display: flex; justify-content: space-between; align-items: baseline; padding: 0.55rem 0; border-bottom: 1px solid #f6f9fc; font-size: 0.82rem; }
+  .modal-row:last-child { border: none; }
+  .modal-row-label { color: #8792a2; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .modal-row-value { color: #1a1f36; text-align: right; max-width: 60%; word-break: break-word; font-weight: 500; }
+  .modal-row-value.big { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 700; color: #635bff; }
+  .modal-row-value.tag { font-size: 0.65rem; padding: 0.2rem 0.65rem; border-radius: 99px; background: #f0f0ff; color: #635bff; border: 1px solid #c7d2fe; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .modal-row-value.tag.exenta { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #f0f3f8; display: flex; gap: 0.6rem; }
   .btn-confirm {
     flex: 2; padding: 0.8rem;
-    background: var(--sheets-bg); border: 1px solid var(--sheets-border);
-    color: #5dca7a; border-radius: 6px;
-    font-family: var(--font-mono); font-size: 0.75rem;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    cursor: pointer; transition: all 0.15s; font-weight: 500;
-  }
-  .btn-confirm:hover { background: rgba(52,168,83,0.2); }
-  .btn-cancel-modal {
-    flex: 1; padding: 0.8rem;
-    background: transparent; border: 1px solid var(--border);
-    color: var(--muted); border-radius: 6px;
-    font-family: var(--font-mono); font-size: 0.72rem;
-    letter-spacing: 0.06em; text-transform: uppercase;
+    background: #09c97f; border: none;
+    color: white; border-radius: 9px;
+    font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600;
     cursor: pointer; transition: all 0.15s;
   }
-  .btn-cancel-modal:hover { color: var(--text); border-color: var(--text); }
+  .btn-confirm:hover { background: #059669; }
+  .btn-cancel-modal {
+    flex: 1; padding: 0.8rem;
+    background: white; border: 1.5px solid #e6ebf1;
+    color: #697386; border-radius: 9px;
+    font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-cancel-modal:hover { border-color: #c1c9d4; color: #1a1f36; }
 
-  /* iOS Safari: prevent auto-zoom on focus (font-size must be >= 16px) */
-  input, textarea, [contenteditable="true"] {
-    font-size: 16px !important;
-  }
-  /* Override for desktop where we want smaller fonts in specific contexts */
-  @media (min-width: 601px) {
-    input, textarea { font-size: 0.78rem !important; }
-    [contenteditable="true"] { font-size: 0.88rem !important; }
-    .field-value.highlight[contenteditable="true"] { font-size: 1.2rem !important; }
-  }
-
-  /* ── BATCH PROCESSING ── */
-  .batch-queue {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .batch-queue-header {
-    padding: 0.85rem 1.25rem;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .batch-queue-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
-
-  .batch-file-list { padding: 0.75rem 1.25rem; display: grid; gap: 0.4rem; }
-  .batch-file-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 5px;
-    background: var(--surface2);
-    font-size: 0.7rem;
-    color: var(--muted);
-    transition: background 0.15s;
-  }
-  .batch-file-name { flex: 1; truncate; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-  .batch-file-status { font-size: 0.62rem; white-space: nowrap; }
-  .batch-file-status.pending  { color: var(--muted); }
-  .batch-file-status.scanning { color: var(--accent2); }
-  .batch-file-status.done     { color: var(--success); }
-  .batch-file-status.error    { color: var(--danger); }
-  .batch-file-status.duplicate { color: var(--accent2); }
-
-  /* Progress bar */
-  .progress-wrap {
-    padding: 0.75rem 1.25rem;
-    border-top: 1px solid var(--border);
-  }
-  .progress-label {
-    font-size: 0.65rem;
-    color: var(--muted);
-    margin-bottom: 0.4rem;
-    display: flex;
-    justify-content: space-between;
-  }
-  .progress-track {
-    height: 4px;
-    background: var(--surface2);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), #0ea572);
-    border-radius: 2px;
-    transition: width 0.35s cubic-bezier(0.4,0,0.2,1);
-    width: 0%;
-    box-shadow: 0 0 8px var(--accent-glow);
-  }
-
-  /* Batch summary table */
-  #batchSummary {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .summary-header {
-    padding: 1rem 1.25rem;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .summary-title { font-family: var(--font-display); font-size: 1rem; color: var(--accent); }
-  .summary-stats { font-size: 0.65rem; color: var(--muted); display: flex; gap: 1rem; }
-  .summary-stat-val { color: var(--text); font-weight: 500; }
-
-  .summary-table { width: 100%; border-collapse: collapse; }
-  .summary-table th {
-    padding: 0.6rem 1rem;
-    font-size: 0.6rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text2);
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface2);
-    font-family: var(--font-mono);
-  }
-  .summary-table td {
+  /* Restore notice */
+  #restoreNotice {
+    display: none; align-items: center; gap: 0.75rem;
     padding: 0.75rem 1rem;
-    font-size: 0.75rem;
-    color: var(--text);
-    border-bottom: 1px solid var(--border);
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    background: #f0f0ff; border: 1px solid #c7d2fe;
+    border-radius: 10px;
+    font-size: 0.75rem; color: #4338ca; font-weight: 500;
   }
+
+  /* Batch */
+  .batch-queue { display: none; background: white; border: 1px solid #e6ebf1; border-radius: 14px; overflow: hidden; }
+  .batch-queue-header { padding: 0.85rem 1.25rem; background: #f6f9fc; border-bottom: 1px solid #e6ebf1; display: flex; justify-content: space-between; align-items: center; }
+  .batch-queue-title { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8792a2; }
+  .batch-file-list { padding: 0.75rem 1.1rem; display: grid; gap: 0.35rem; }
+  .batch-file-item { display: flex; align-items: center; gap: 0.65rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: #f6f9fc; font-size: 0.75rem; }
+  .batch-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1a1f36; font-weight: 500; }
+  .batch-file-status { font-size: 0.68rem; white-space: nowrap; font-weight: 500; }
+  .batch-file-status.pending   { color: #8792a2; }
+  .batch-file-status.scanning  { color: #635bff; }
+  .batch-file-status.done      { color: #059669; }
+  .batch-file-status.error     { color: #dc2626; }
+  .batch-file-status.duplicate { color: #d97706; }
+  .progress-wrap { padding: 0.75rem 1.25rem; border-top: 1px solid #f0f3f8; }
+  .progress-label { font-size: 0.68rem; color: #8792a2; margin-bottom: 0.4rem; display: flex; justify-content: space-between; font-weight: 500; }
+  .progress-track { height: 4px; background: #f0f3f8; border-radius: 99px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, #635bff, #09c97f); border-radius: 99px; transition: width 0.4s ease; width: 0%; }
+
+  /* Batch summary */
+  #batchSummary { display: none; background: white; border: 1px solid #e6ebf1; border-radius: 14px; overflow: hidden; }
+  .summary-header { padding: 1rem 1.25rem; background: linear-gradient(135deg, #f8f9ff, white); border-bottom: 1px solid #f0f3f8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+  .summary-title { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 700; color: #1a1f36; }
+  .summary-stats { display: flex; gap: 0.75rem; font-size: 0.7rem; color: #8792a2; flex-wrap: wrap; }
+  .summary-stat-val { color: #1a1f36; font-weight: 600; }
+  .summary-table { width: 100%; border-collapse: collapse; }
+  .summary-table th { padding: 0.6rem 1rem; font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8792a2; text-align: left; border-bottom: 1px solid #f0f3f8; background: #f6f9fc; }
+  .summary-table td { padding: 0.75rem 1rem; font-size: 0.78rem; color: #1a1f36; border-bottom: 1px solid #f6f9fc; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .summary-table tr.clickable { cursor: pointer; transition: background 0.12s; }
-  .summary-table tr.clickable:hover { background: var(--surface2); }
-  .summary-table tr.selected { background: rgba(200,240,96,0.07); }
-  .summary-table tr.selected td { color: var(--accent); }
+  .summary-table tr.clickable:hover { background: #f8f9ff; }
+  .summary-table tr.selected { background: #f0f0ff; }
+  .summary-table tr.selected td { color: #4338ca; }
+  .status-icon { font-size: 0.9rem; }
+  .total-cell { font-family: 'Fraunces', serif; font-weight: 700; color: #635bff; }
+  .type-badge { font-size: 0.62rem; padding: 0.18rem 0.55rem; border-radius: 99px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; border: 1px solid; }
+  .type-iva    { background: #f0f0ff; color: #635bff; border-color: #c7d2fe; }
+  .type-exenta { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+  .type-error  { background: #fff5f5; color: #dc2626; border-color: #fecdd3; }
 
-  .status-icon { font-size: 1rem; }
-  .total-cell { font-family: var(--font-display); color: var(--accent); }
-  .type-badge {
-    font-size: 0.58rem;
-    padding: 0.15rem 0.45rem;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border: 1px solid;
-  }
-  .type-iva { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-glow); }
-  .type-exenta { background: var(--warning-dim); color: var(--warning); border-color: rgba(245,158,11,0.3); }
-  .type-error { background: var(--danger-dim); color: var(--danger); border-color: rgba(239,68,68,0.3); }
-
-  /* Save all button */
   .btn-save-all {
-    width: 100%;
+    display: none; width: 100%;
     padding: 0.9rem;
-    background: var(--sheets-bg);
-    border: 1px solid var(--sheets-border);
-    color: #5dca7a;
-    border-radius: 6px;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-    display: none;
+    background: #09c97f; border: none;
+    color: white; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 4px 14px rgba(9,201,127,0.3);
   }
-  .btn-save-all:hover { background: rgba(52,168,83,0.2); }
-  .btn-save-all:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-save-all:hover { background: #059669; transform: translateY(-1px); }
+  .btn-save-all:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+  /* Formulas section */
+  .formula-row { background: white; padding: 0.9rem 1.1rem; border-bottom: 1px solid #f0f3f8; }
+  .formula-row:last-child { border-bottom: none; }
+
+  /* iOS safe area for sticky bar space */
+  .scan-tab-spacer { height: calc(4rem + env(safe-area-inset-bottom)); }
+
+  /* Mobile */
   @media (max-width: 600px) {
-    .summary-table td, .summary-table th { padding: 0.6rem 0.75rem; font-size: 0.68rem; }
-    .summary-stats { flex-direction: column; gap: 0.3rem; }
+    header { padding: calc(0.75rem + var(--safe-top)) 1rem 0.75rem; }
+    .main  { padding: 1rem 0.75rem calc(5.5rem + var(--safe-bottom)); gap: 0.85rem; }
+    .fields-grid { grid-template-columns: 1fr 1fr; }
+    .summary-stats { font-size: 0.65rem; }
+    .modal-footer { flex-direction: column; }
+    .btn-confirm, .btn-cancel-modal { width: 100%; }
+    .modal-body { max-height: 55vh; overflow-y: auto; }
+    .step { grid-template-columns: 1.75rem 1fr; gap: 0.65rem; }
+    .step-num { width: 1.75rem; height: 1.75rem; font-size: 0.65rem; }
+    .code-block { font-size: 0.6rem; }
+    .input-row { flex-direction: column; }
+    .input-row .btn-sm { width: 100%; }
+    .sticky-bar { padding: 0.75rem 1rem calc(0.75rem + var(--safe-bottom)); }
   }
-
-  /* ── SETUP ACCORDION ── */
-  .setup-accordion {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-  }
-
-  .setup-connected-bar {
-    display: none;
-    padding: 0.9rem 1.25rem;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .setup-connected-bar:hover { background: var(--surface2); }
-
-  .setup-connected-bar.visible { display: flex; }
-
-  .setup-conn-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
-    flex-shrink: 0;
-  }
-
-  .setup-conn-label { font-size: 0.78rem; font-weight: 600; color: var(--accent); flex: 1; }
-  .setup-conn-edit {
-    font-size: 0.65rem; color: var(--text2);
-    font-family: var(--font-mono); text-transform: uppercase;
-    letter-spacing: 0.08em; padding: 0.25rem 0.6rem;
-    border: 1px solid var(--border2); border-radius: 20px;
-    transition: all 0.15s;
-  }
-  .setup-conn-edit:hover { color: var(--text); border-color: var(--border2); }
-
-  .setup-details {
-    overflow: hidden;
-    transition: opacity 0.25s ease;
-    opacity: 1;
-  }
-  .setup-details.collapsed {
-    display: none;
-    opacity: 0;
-  }
-
-  /* API mini section */
-  .api-mini {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--warning);
-    border-radius: var(--radius-sm);
-    padding: 1rem 1.25rem;
-    box-shadow: var(--shadow);
-  }
-
-  .api-mini-title {
-    font-size: 0.62rem;
-    font-weight: 600;
-    color: var(--warning);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.6rem;
-    font-family: var(--font-mono);
-  }
-
-  .field-icon {
-    font-size: 0.7rem;
-    margin-right: 0.3rem;
-    opacity: 0.6;
-  }
-
-  /* Sticky action bar on mobile */
-  @media (max-width: 600px) {
-    .action-bar {
-      position: sticky;
-      bottom: calc(0.75rem + env(safe-area-inset-bottom));
-      z-index: 50;
-      background: rgba(22, 24, 26, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.75rem;
-      margin-top: 0.5rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
+  @media (max-width: 380px) {
+    .fields-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
+<div class="hero-stripe"></div>
+
 <header>
-  <div class="header-left">
-    <div class="logo">FacturaScan</div>
-    <div class="logo-tag">v2.0 · Sheets</div>
+  <div class="header-left" style="display:flex;align-items:center;gap:0.75rem;">
+    <div class="logo">Factura<span>Scan</span></div>
+    <span style="font-size:0.65rem;font-weight:500;color:#c1c9d4;background:#f6f9fc;border:1px solid #e6ebf1;padding:0.2rem 0.5rem;border-radius:6px;">v2</span>
   </div>
-  <div class="sheets-indicator">
-    <div class="sheets-dot" id="sheetsDot"></div>
-    <span id="sheetsStatus">Sheets no conectado</span>
-    <span style="margin-left:0.5rem;" class="counter">
-      <span class="counter-num" id="savedCount">0</span> guardadas
-    </span>
+  <div class="header-badges">
+    <div class="badge-pill">
+      <div class="dot" id="sheetsDot"></div>
+      <span id="sheetsStatus">Sheets</span>
+    </div>
+    <div class="badge-pill">
+      <span class="summary-stat-val" id="savedCount">0</span>
+      <span>guardadas</span>
+    </div>
   </div>
 </header>
 
 <div class="main">
 
   <!-- TABS -->
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('scan')">📄 Escanear</div>
-    <div class="tab" onclick="switchTab('setup')">⚙ Configuración</div>
+  <div class="tabs" role="tablist">
+    <button class="tab active" onclick="switchTab('scan')">📄 Escanear</button>
+    <button class="tab" onclick="switchTab('setup')">⚙ Configuración</button>
   </div>
 
-  <!-- ══════════════ TAB: SCAN ══════════════ -->
+  <!-- ══ TAB SCAN ══ -->
   <div class="tab-panel active" id="tab-scan">
 
-    <!-- API key mini -->
+    <!-- API Key -->
     <div class="api-mini">
       <div class="api-mini-title">🔑 Clave API Anthropic</div>
       <div class="input-row">
-        <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+        <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-…" />
         <button class="btn-sm" onclick="saveKey()">Guardar</button>
       </div>
-      <div class="hint">Consíguela en <strong style="color:var(--text)">console.anthropic.com</strong> → API Keys. Se guarda solo en tu navegador.</div>
+      <div class="hint">Obtenla en <strong>console.anthropic.com</strong> → API Keys.</div>
       <div class="status-msg" id="keyStatus"></div>
     </div>
 
     <!-- Restore notice -->
-    <div id="restoreNotice" style="display:none;align-items:center;gap:0.75rem;padding:0.75rem 1rem;background:rgba(200,240,96,0.06);border:1px solid rgba(200,240,96,0.2);border-radius:6px;font-size:0.7rem;color:var(--accent);">
+    <div id="restoreNotice">
       <span>↩</span>
-      <span>Sesión restaurada — tus datos del último escaneo siguen aquí.</span>
-      <button onclick="resetAll()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);padding:0.25rem 0.6rem;border-radius:4px;font-family:'Geist Mono','DM Mono',monospace;font-size:0.62rem;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;">Limpiar</button>
+      <span id="restoreText">Sesión restaurada — tus datos del último escaneo siguen aquí.</span>
+      <button onclick="resetAll()" style="margin-left:auto;background:none;border:1px solid #c7d2fe;color:#635bff;padding:0.2rem 0.6rem;border-radius:5px;font-family:Inter,sans-serif;font-size:0.65rem;font-weight:500;cursor:pointer;">Limpiar</button>
     </div>
-
-    <!-- Upload -->
-    <div class="upload-zone" id="uploadZone" onclick="triggerFileInput()">
-      <span class="upload-icon">📄</span>
-      <div class="upload-title">Sube tu factura</div>
-      <div class="upload-sub">Arrastra aquí o haz clic para seleccionar<br>JPG · PNG · WEBP</div>
-      <input type="file" id="fileInput" accept="image/*" multiple />
-    </div>
-
 
     <!-- Batch Queue -->
     <div class="batch-queue" id="batchQueue">
       <div class="batch-queue-header">
         <div class="batch-queue-title">Cola de procesamiento</div>
-        <div id="batchQueueCount" style="font-size:0.65rem;color:var(--accent);"></div>
+        <div id="batchQueueCount" style="font-size:0.72rem;font-weight:600;color:#635bff;"></div>
       </div>
       <div class="batch-file-list" id="batchFileList"></div>
       <div class="progress-wrap" id="progressWrap" style="display:none;">
         <div class="progress-label">
-          <span id="progressLabel">Preparando...</span>
+          <span id="progressLabel">Preparando…</span>
           <span id="progressPct">0%</span>
         </div>
-        <div class="progress-track">
-          <div class="progress-bar" id="progressBar"></div>
-        </div>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
       </div>
     </div>
 
-    <!-- Batch Summary -->
-    <div id="batchSummary">
-      <div class="summary-header">
-        <div class="summary-title">Resumen del lote</div>
-        <div class="summary-stats">
-          <span>✓ <span class="summary-stat-val" id="statOk">0</span> ok</span>
-          <span>⚠ <span class="summary-stat-val" id="statDup">0</span> duplicadas</span>
-          <span>✕ <span class="summary-stat-val" id="statErr">0</span> errores</span>
-          <span>Σ <span class="summary-stat-val" id="statTotal">0.00 €</span></span>
-        </div>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="summary-table">
-          <thead>
-            <tr>
-              <th>Estado</th>
-              <th>Proveedor</th>
-              <th>Nº Factura</th>
-              <th>Fecha</th>
-              <th>Total</th>
-              <th>Tipo</th>
-            </tr>
-          </thead>
-          <tbody id="summaryTableBody"></tbody>
-        </table>
-      </div>
+    <!-- Upload zone -->
+    <div class="upload-zone" id="uploadZone" onclick="triggerFileInput()">
+      <span class="upload-icon">📄</span>
+      <div class="upload-title">Sube tu factura</div>
+      <div class="upload-sub">Arrastra aquí o toca para seleccionar · JPG · PNG · WEBP<br>Selecciona hasta 10 archivos para procesamiento en lote</div>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" />
     </div>
-
-    <!-- Save all button -->
-    <button class="btn-save-all" id="btnSaveAll" onclick="saveAllToSheets()">
-      📊 Guardar todo en Sheets
-    </button>
 
     <!-- Preview -->
     <div class="preview-area" id="previewArea">
-      <div class="preview-header">Vista previa · <span id="fileName">—</span></div>
+      <div class="preview-header">
+        <span>Vista previa</span><span id="fileName" style="color:#635bff;font-weight:500;">—</span>
+      </div>
       <img id="previewImg" alt="Vista previa" />
     </div>
 
@@ -1334,7 +763,7 @@
       <div class="loading-dots">
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
       </div>
-      <div class="loading-text" id="loadingText">Analizando factura con IA...</div>
+      <div class="loading-text" id="loadingText">Analizando con IA…</div>
     </div>
 
     <!-- Error -->
@@ -1344,103 +773,99 @@
     <div class="results" id="results">
       <div class="results-header">
         <div class="results-title">Datos extraídos</div>
-        <div class="badge">✓ Completado</div>
+        <div class="badge-ok">✓ Completado</div>
       </div>
-      <div style="padding:0.6rem 1.5rem;background:rgba(200,240,96,0.06);border-bottom:1px solid var(--border);font-size:0.68rem;color:var(--accent);display:flex;align-items:center;gap:0.5rem;"><span>✏</span><span>Todos los campos son editables — haz clic sobre cualquier valor para corregirlo antes de guardar</span></div>
-    <div class="validation-warning" id="validationWarning">Los importes no cuadran: base imponible + cuota impuesto ≠ total. Revisa y corrige los campos en rojo antes de guardar.</div>
-    <div class="fields-grid" id="fieldsGrid"></div>
-      <div class="obs-section" id="obsSection" style="display:none">
-        <div class="obs-label">⚠ Observaciones</div>
+      <div class="edit-hint">✏ Toca cualquier valor para editarlo antes de guardar</div>
+      <div class="validation-warning" id="validationWarning">Los importes no cuadran: base + cuota ≠ total. Revisa los campos en rojo antes de guardar.</div>
+      <div class="fields-grid" id="fieldsGrid"></div>
+      <div class="obs-section" id="obsSection" style="display:none;">
+        <div class="obs-label">📝 Observaciones</div>
         <div class="obs-text" id="obsText"></div>
       </div>
     </div>
 
-    <!-- Action bar -->
-    <div class="action-bar" id="actionBar">
-      <button class="btn-sheets" id="btnSheets" onclick="saveToSheets()">
-        <span id="btnSheetsText">📊 Guardar en Google Sheets</span>
-      </button>
-      <button class="btn-action" onclick="exportCSV()">⬇ CSV</button>
-      <button class="btn-action" onclick="copyJSON()">⎘ JSON</button>
-      <button class="btn-new" onclick="resetAll()">+ Nueva</button>
-      <div class="sheets-save-status" id="sheetsSaveStatus"></div>
+    <!-- Batch Summary -->
+    <div id="batchSummary">
+      <div class="summary-header">
+        <div class="summary-title">Resumen del lote</div>
+        <div class="summary-stats">
+          <span>✓ <span class="summary-stat-val" id="statOk">0</span> ok</span>
+          <span>⚠ <span class="summary-stat-val" id="statDup">0</span> dup</span>
+          <span>✕ <span class="summary-stat-val" id="statErr">0</span> err</span>
+          <span>Σ <span class="summary-stat-val" id="statTotal">0.00 €</span></span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="summary-table">
+          <thead><tr>
+            <th>Estado</th><th>Proveedor</th><th>Nº Factura</th><th>Fecha</th><th>Total</th><th>Tipo</th>
+          </tr></thead>
+          <tbody id="summaryTableBody"></tbody>
+        </table>
+      </div>
     </div>
 
+    <!-- Save all -->
+    <button class="btn-save-all" id="btnSaveAll" onclick="saveAllToSheets()">📊 Guardar todo en Sheets</button>
+
+    <div class="scan-tab-spacer"></div>
   </div>
 
-  <!-- ══════════════ TAB: SETUP ══════════════ -->
+  <!-- ══ TAB SETUP ══ -->
   <div class="tab-panel" id="tab-setup">
 
-    <!-- Connected indicator — shown when both key and URL are saved -->
-    <div class="setup-accordion" id="setupAccordion">
-      <div class="setup-connected-bar" id="setupConnectedBar" onclick="toggleSetupDetails()">
-        <div class="setup-conn-dot"></div>
-        <span class="setup-conn-label">✓ Configuración completa</span>
-        <span class="setup-conn-edit" id="setupEditBtn">Editar ▾</span>
-      </div>
-      <div class="setup-details" id="setupDetails">
+    <!-- Accordion connected bar -->
+    <div class="setup-connected-bar" id="setupConnectedBar" onclick="toggleSetupDetails()">
+      <div class="setup-conn-dot"></div>
+      <span class="setup-conn-label">✓ Configuración completa</span>
+      <span class="setup-conn-edit" id="setupEditBtn">Editar ▾</span>
+    </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Conectar con Google Sheets vía SheetDB — 3 pasos</div>
-      </div>
-      <div class="card-body">
-        <div class="steps">
+    <div class="setup-details" id="setupDetails">
 
-          <!-- STEP 1 -->
-          <div class="step">
-            <div class="step-num">1</div>
-            <div class="step-content">
-              <div class="step-title">Prepara tu hoja de Google Sheets</div>
-              <div class="step-desc">
-                Ve a <a href="https://sheets.new" target="_blank">sheets.new</a> y crea una hoja nueva.<br>
-                En la <strong style="color:var(--text)">primera fila</strong> añade estas cabeceras exactamente así (una por columna, de A a P):
-              </div>
-              <div style="position:relative;">
-                <div id="headersCode" style="
-                  background:#0a0a08;
-                  border:1px solid var(--border);
-                  border-radius:6px;
-                  padding:1rem 1.25rem;
-                  display:grid;
-                  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                  gap:0.4rem 1.5rem;
-                ">
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">A · fecha_escaneo</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">B · fecha</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">C · numero_factura</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">D · proveedor</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">E · nif_proveedor</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">F · concepto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">G · base_imponible</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">H · tipo_impuesto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">I · porcentaje_impuesto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">J · cuota_impuesto</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">K · total</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">L · moneda</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">M · tipo_contable</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">N · forma_pago</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">O · cliente</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">P · nif_cliente</span>
-                  <span style="font-size:0.68rem;color:#a0d080;font-family:'Geist Mono','DM Mono',monospace;">Q · observaciones</span>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Conectar con Google Sheets — 3 pasos</div></div>
+        <div class="card-body">
+          <div class="steps">
+
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <div class="step-title">Prepara tu hoja de Google Sheets</div>
+                <div class="step-desc">Ve a <a href="https://sheets.new" target="_blank">sheets.new</a> y crea una hoja nueva. En la <strong>primera fila</strong> añade estas cabeceras (una por columna, de A a Q):</div>
+                <div style="position:relative;">
+                  <div id="headersCode" style="background:#1a1f36;border-radius:8px;padding:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.35rem 1.25rem;">
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">A · fecha_escaneo</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">B · fecha</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">C · numero_factura</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">D · proveedor</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">E · nif_proveedor</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">F · concepto</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">G · base_imponible</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">H · tipo_impuesto</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">I · porcentaje_impuesto</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">J · cuota_impuesto</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">K · total</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">L · moneda</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">M · tipo_contable</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">N · forma_pago</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">O · cliente</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">P · nif_cliente</span>
+                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">Q · observaciones</span>
+                  </div>
+                  <button class="copy-code-btn" onclick="copyHeaders()">Copiar</button>
                 </div>
-                <button class="copy-code-btn" onclick="copyHeaders()">Copiar</button>
+                <div class="hint" style="margin-top:0.5rem;">Pega en celda A1 → <strong>Datos → Dividir texto en columnas</strong> (separador: tabulación).</div>
               </div>
-              <div class="hint">Copia el texto, pégalo en la celda A1 de tu Sheets y usa <strong style="color:var(--text)">Datos → Dividir texto en columnas</strong> (separador: tabulación). O escríbelos manualmente uno a uno.</div>
             </div>
-          </div>
 
-          <!-- STEP 2 -->
-          <div class="step">
-            <div class="step-num">2</div>
-            <div class="step-content">
-              <div class="step-title">Pega el script en Apps Script</div>
-              <div class="step-desc">
-                En tu hoja de Sheets ve a <strong style="color:var(--text)">Extensiones → Apps Script</strong>.<br>
-                Borra todo el código existente y pega este (usa <strong style="color:var(--accent)">doGet</strong>, no doPost):
-              </div>
-              <div style="position:relative;">
-                <div class="code-block" id="appsScriptCode">function doGet(e) {
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <div class="step-title">Pega el script en Apps Script</div>
+                <div class="step-desc">En tu hoja → <strong>Extensiones → Apps Script</strong> → borra el código existente y pega este:</div>
+                <div style="position:relative;">
+                  <div class="code-block" id="appsScriptCode">function doGet(e) {
   try {
     var ss    = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getActiveSheet();
@@ -1532,282 +957,113 @@
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
 }</div>
-                <button class="copy-code-btn" onclick="copyScript()">Copiar</button>
-              </div>
-              <div class="hint">Este script convierte tu hoja en una API que acepta datos. Es gratuito y sin límites — forma parte de tu cuenta de Google.</div>
-            </div>
-          </div>
-
-          <!-- STEP 3 -->
-          <div class="step">
-            <div class="step-num">3</div>
-            <div class="step-content">
-              <div class="step-title">Publica el script y pega la URL aquí</div>
-              <div class="step-desc">
-                En la ventana de Apps Script:<br>
-                1. Pulsa <strong style="color:var(--text)">Implementar → Nueva implementación</strong><br>
-                2. Haz clic en el icono ⚙ junto a "Tipo" → selecciona <strong style="color:var(--text)">Aplicación web</strong><br>
-                3. En "Ejecutar como" selecciona <strong style="color:var(--text)">Yo (tu email)</strong><br>
-                4. En "Quién tiene acceso" selecciona <strong style="color:var(--text)">Cualquier usuario</strong><br>
-                5. Pulsa <strong style="color:var(--text)">Implementar</strong><br>
-                6. Si pide autorización → <strong style="color:var(--text)">Revisar permisos → elige tu cuenta → "Configuración avanzada" → "Ir al proyecto" → Permitir</strong><br>
-                7. Copia la <strong style="color:var(--text)">URL de la aplicación web</strong> que aparece (empieza por <span style="color:var(--accent)">https://script.google.com/macros/s/...</span>)
-              </div>
-              <div class="input-row">
-                <input type="text" class="field-input" id="sheetsUrlInput"
-                  placeholder="https://script.google.com/macros/s/.../exec" />
-                <button class="btn-sm" onclick="saveUrl()">Guardar</button>
-              </div>
-              <div class="hint">⚠ Importante: cada vez que modifiques el script debes crear una <strong style="color:var(--text)">nueva implementación</strong> para que los cambios surtan efecto.</div>
-              <div class="status-msg" id="urlStatus"></div>
-
-              <div style="margin-top: 1rem;">
-                <button class="btn-sm" onclick="testConnection()" style="width:100%; padding: 0.75rem; text-align:center;">
-                  🔗 Probar conexión
-                </button>
-                <div class="status-msg" id="testStatus"></div>
+                  <button class="copy-code-btn" onclick="copyScript()">Copiar</button>
+                </div>
+                <div class="hint" style="margin-top:0.5rem;">Gratuito y sin límites — usa tu cuenta de Google.</div>
               </div>
             </div>
-          </div>
 
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <div class="step-title">Publica y pega la URL aquí</div>
+                <div class="step-desc">
+                  <strong>Implementar → Nueva implementación → Aplicación web</strong><br>
+                  Ejecutar como: <strong>Yo</strong> · Acceso: <strong>Cualquier usuario</strong><br>
+                  Si pide autorización → Configuración avanzada → Ir al proyecto → Permitir
+                </div>
+                <div class="input-row">
+                  <input type="text" class="field-input" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" />
+                  <button class="btn-sm" onclick="saveUrl()">Guardar</button>
+                </div>
+                <div class="hint">⚠ Crea una nueva implementación cada vez que modifiques el script.</div>
+                <div class="status-msg" id="urlStatus"></div>
+                <div style="margin-top:0.85rem;">
+                  <button class="btn-sm" onclick="testConnection()" style="width:100%;padding:0.7rem;text-align:center;">🔗 Probar conexión</button>
+                  <div class="status-msg" id="testStatus"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
-    </div>
 
+      <div class="card">
+        <div class="card-header"><div class="card-title">📌 Permisos de Google</div></div>
+        <div class="card-body">
+          <div class="hint" style="line-height:1.8;">Google puede mostrar <strong>"App no verificada"</strong> al autorizar. Es normal para scripts propios. Pulsa <strong>Configuración avanzada → Ir al proyecto → Permitir</strong>.</div>
+        </div>
+      </div>
+
+    </div><!-- /setup-details -->
+
+    <!-- Formulas -->
     <div class="card">
-      <div class="card-header"><div class="card-title">📌 Nota importante sobre permisos</div></div>
-      <div class="card-body">
-        <div style="font-size:0.72rem; color:var(--muted); line-height:1.9;">
-          Al autorizar el script, Google puede mostrar un aviso de <strong style="color:var(--text)">"Google no ha verificado esta app"</strong>. Es completamente normal para scripts propios.<br><br>
-          Haz clic en <strong style="color:var(--text)">"Configuración avanzada"</strong> → <strong style="color:var(--text)">"Ir al proyecto (no seguro)"</strong> → <strong style="color:var(--text)">Permitir</strong>.<br><br>
-          El script solo tiene acceso a tu hoja de cálculo y no envía datos a ningún sitio externo.
+      <div class="card-header"><div class="card-title">📐 Fórmulas para totales en Sheets</div></div>
+      <div class="card-body" style="padding:0;">
+        <div class="formula-row">
+          <div class="field-label" style="margin-bottom:0.4rem;">Total IVA/IGIC</div>
+          <div style="position:relative;"><div class="code-block" id="formula1" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUMIF(M:M,"IVA/IGIC",K:K)</div><button class="copy-code-btn" onclick="copyFormula('formula1',this)">Copiar</button></div>
+        </div>
+        <div class="formula-row">
+          <div class="field-label" style="margin-bottom:0.4rem;">Total exentas</div>
+          <div style="position:relative;"><div class="code-block" id="formula2" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUMIF(M:M,"EXENTA",K:K)</div><button class="copy-code-btn" onclick="copyFormula('formula2',this)">Copiar</button></div>
+        </div>
+        <div class="formula-row">
+          <div class="field-label" style="margin-bottom:0.4rem;">Total general</div>
+          <div style="position:relative;"><div class="code-block" id="formula3" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUM(K2:K)</div><button class="copy-code-btn" onclick="copyFormula('formula3',this)">Copiar</button></div>
+        </div>
+        <div class="formula-row">
+          <div class="field-label" style="margin-bottom:0.4rem;">Total cuota impuesto</div>
+          <div style="position:relative;"><div class="code-block" id="formula4" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUM(J2:J)</div><button class="copy-code-btn" onclick="copyFormula('formula4',this)">Copiar</button></div>
+        </div>
+        <div class="formula-row">
+          <div class="field-label" style="margin-bottom:0.4rem;">Recuento facturas</div>
+          <div style="position:relative;"><div class="code-block" id="formula5" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=COUNTA(C2:C)</div><button class="copy-code-btn" onclick="copyFormula('formula5',this)">Copiar</button></div>
         </div>
       </div>
-
-      </div>
-    </div><!-- /setup-accordion -->
-
-    <!-- FORMULAS SECTION -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">📐 Fórmulas para totales automáticos en Sheets</div>
-      </div>
-      <div class="card-body">
-        <div class="step-desc" style="margin-bottom:1.25rem;">
-          Pega estas fórmulas en una celda vacía de tu hoja (por ejemplo columna <strong style="color:var(--text)">S</strong>) para ver totales actualizados automáticamente.
-        </div>
-
-        <div style="display:grid;gap:1px;background:var(--border);border-radius:6px;overflow:hidden;margin-bottom:1.25rem;">
-
-          <div style="background:var(--surface);padding:1rem 1.25rem;">
-            <div class="field-label" style="margin-bottom:0.5rem;">Total gastos con IVA/IGIC</div>
-            <div style="position:relative;">
-              <div class="code-block" id="formula1" style="white-space:nowrap;">=SUMIF(M:M,"IVA/IGIC",K:K)</div>
-              <button class="copy-code-btn" onclick="copyFormula('formula1',this)">Copiar</button>
-            </div>
-          </div>
-
-          <div style="background:var(--surface);padding:1rem 1.25rem;">
-            <div class="field-label" style="margin-bottom:0.5rem;">Total gastos exentos</div>
-            <div style="position:relative;">
-              <div class="code-block" id="formula2" style="white-space:nowrap;">=SUMIF(M:M,"EXENTA",K:K)</div>
-              <button class="copy-code-btn" onclick="copyFormula('formula2',this)">Copiar</button>
-            </div>
-          </div>
-
-          <div style="background:var(--surface);padding:1rem 1.25rem;">
-            <div class="field-label" style="margin-bottom:0.5rem;">Total general de gastos</div>
-            <div style="position:relative;">
-              <div class="code-block" id="formula3" style="white-space:nowrap;">=SUM(K2:K)</div>
-              <button class="copy-code-btn" onclick="copyFormula('formula3',this)">Copiar</button>
-            </div>
-          </div>
-
-          <div style="background:var(--surface);padding:1rem 1.25rem;">
-            <div class="field-label" style="margin-bottom:0.5rem;">Total IVA/IGIC a deducir</div>
-            <div style="position:relative;">
-              <div class="code-block" id="formula4" style="white-space:nowrap;">=SUM(J2:J)</div>
-              <button class="copy-code-btn" onclick="copyFormula('formula4',this)">Copiar</button>
-            </div>
-          </div>
-
-          <div style="background:var(--surface);padding:1rem 1.25rem;">
-            <div class="field-label" style="margin-bottom:0.5rem;">Recuento de facturas</div>
-            <div style="position:relative;">
-              <div class="code-block" id="formula5" style="white-space:nowrap;">=COUNTA(C2:C)</div>
-              <button class="copy-code-btn" onclick="copyFormula('formula5',this)">Copiar</button>
-            </div>
-          </div>
-
-        </div>
-
-        <div style="padding:0.85rem 1rem;background:rgba(200,240,96,0.04);border:1px solid var(--border);border-radius:6px;font-size:0.68rem;color:var(--muted);line-height:1.8;">
-          💡 <strong style="color:var(--text)">Consejo:</strong> Crea una segunda pestaña en tu Sheets llamada <strong style="color:var(--text)">"Resumen"</strong> y pon ahí estas fórmulas apuntando a la hoja de datos para tener un panel separado.
-        </div>
+      <div style="padding:0.85rem 1.25rem;border-top:1px solid #f0f3f8;font-size:0.72rem;color:#8792a2;line-height:1.7;">
+        💡 <strong style="color:#1a1f36;">Consejo:</strong> Crea una pestaña <strong style="color:#1a1f36;">"Resumen"</strong> en tu Sheets y pon ahí estas fórmulas apuntando a la hoja de datos.
       </div>
     </div>
-    </div>
 
+  </div><!-- /tab-setup -->
+
+</div><!-- /main -->
+
+<!-- Sticky action bar -->
+<div class="sticky-bar" id="actionBar">
+  <button class="btn-sheets" id="btnSheets" onclick="saveToSheets()">
+    <span id="btnSheetsText">📊 Guardar en Sheets</span>
+  </button>
+  <button class="btn-action" onclick="exportCSV()">⬇ CSV</button>
+  <button class="btn-action" onclick="copyJSON()">⎘ JSON</button>
+  <button class="btn-new" onclick="resetAll()">＋ Nueva</button>
+  <div class="sheets-save-status" id="sheetsSaveStatus"></div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Confirmar datos</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-confirm" onclick="confirmSave()">📊 Confirmar y guardar</button>
+      <button class="btn-cancel-modal" onclick="closeModal()">Cancelar</button>
+    </div>
   </div>
-
 </div>
 
 <script>
-let currentData = null;
-let currentImageB64 = null;
-let savedCount = 0;
-
-// ── TABS ──
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['scan','setup'][i] === name);
-  });
-  document.querySelectorAll('.tab-panel').forEach((p, i) => {
-    p.classList.toggle('active', ['tab-scan','tab-setup'][i] === 'tab-' + name);
-  });
-}
-
-// ── PERSISTENCE ──
-function saveKey() {
-  const val = document.getElementById('apiKeyInput').value.trim();
-  if (!val.startsWith('sk-ant-')) { setStatus('keyStatus', '⚠ Formato inválido', 'err'); return; }
-  localStorage.setItem('factura_key', val);
-  setStatus('keyStatus', '✓ Clave guardada permanentemente en este navegador', 'ok');
-  checkSetupComplete();
-}
-
-function getKey() { return localStorage.getItem('factura_key') || ''; }
-
-function saveUrl() {
-  const val = document.getElementById('sheetsUrlInput').value.trim();
-  if (!val.startsWith('https://')) { setStatus('urlStatus', '⚠ La URL debe empezar por https://', 'err'); return; }
-  localStorage.setItem('factura_sheets_url', val);
-  setStatus('urlStatus', '✓ URL guardada', 'ok');
-  updateSheetsIndicator();
-  checkSetupComplete();
-}
-
-function getUrl() { return localStorage.getItem('factura_sheets_url') || ''; }
-
-function updateSheetsIndicator() {
-  const url    = getUrl();
-  const key    = getKey();
-  const dot    = document.getElementById('sheetsDot');
-  const status = document.getElementById('sheetsStatus');
-  const both   = url && key;
-
-  if (url) {
-    dot.classList.add('connected');
-    status.textContent = 'Sheets conectado';
-    status.style.color = 'var(--success)';
-    document.getElementById('btnSheets').disabled = false;
-  } else {
-    dot.classList.remove('connected');
-    status.textContent = 'Sheets no conectado';
-    status.style.color = '';
-    document.getElementById('btnSheets').disabled = true;
-  }
-
-  // Accordion: collapse config when both credentials are set
-  const bar     = document.getElementById('setupConnectedBar');
-  const details = document.getElementById('setupDetails');
-  if (bar && details) {
-    if (both) {
-      bar.classList.add('visible');
-      // Auto-collapse only on first load (not if user manually expanded)
-      if (!details.dataset.userExpanded) {
-        details.classList.add('collapsed');
-        const editBtn = document.getElementById('setupEditBtn');
-        if (editBtn) editBtn.textContent = 'Editar ▾';
-      }
-    } else {
-      bar.classList.remove('visible');
-      details.classList.remove('collapsed');
-    }
-  }
-}
-
-function toggleSetupDetails() {
-  const details = document.getElementById('setupDetails');
-  const btn     = document.getElementById('setupEditBtn');
-  if (!details) return;
-  const isCollapsed = details.classList.contains('collapsed');
-  if (isCollapsed) {
-    details.classList.remove('collapsed');
-    btn.textContent = 'Cerrar ▴';
-    details.dataset.userExpanded = 'yes';
-  } else {
-    details.classList.add('collapsed');
-    btn.textContent = 'Editar ▾';
-    details.dataset.userExpanded = '';
-  }
-}
-
-async function postToSheetDB(rowData) {
-  const url = getUrl();
-  const key = getKey();
-  if (!url || !key) throw new Error('Faltan credenciales');
-
-  const payload = { data: [rowData] };
-
-  // Use Claude API as a proxy to avoid CORS issues
-  const prompt = `Haz una petición HTTP POST a esta URL: ${url}
-Con este JSON exacto como body: ${JSON.stringify(payload)}
-Headers: Content-Type: application/json
-
-Responde SOLO con el JSON de respuesta que recibas, sin explicaciones.`;
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 256,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
-
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data;
-}
-
 async function sendToSheetDB(rowData) {
   const url = getUrl();
   if (!url) throw new Error('No hay URL configurada');
 
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(rowData)) params.append(k, v ?? '');
-
-  // Strategy: try a direct fetch first (works when app is on HTTPS like GitHub Pages)
-  // Apps Script allows CORS when the request comes from a trusted origin
-  try {
-    const res = await fetch(url + '?' + params.toString(), {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    const text = await res.text();
-    // Strip JSONP wrapper if present: callback({...}) -> {...}
-    const clean = text.replace(/^[^(]+\(/, '').replace(/\)\s*;?\s*$/, '').trim();
-    const json = JSON.parse(clean);
-    if (json.status === 'ok') return json;
-    if (json.status === 'error') throw new Error(json.msg || 'Error del servidor');
-    throw new Error('Respuesta inesperada: ' + text.slice(0, 80));
-  } catch (fetchErr) {
-    // If fetch failed due to CORS (TypeError), fall back to JSONP
-    if (!(fetchErr instanceof TypeError) && fetchErr.message !== 'Failed to fetch') {
-      // It was a real error (DUPLICATE, etc.), re-throw it
-      throw fetchErr;
-    }
-  }
-
-  // Fallback: JSONP via <script> tag (no CORS restrictions)
+  // Use JSONP + direct fetch to bypass CORS
   return new Promise((resolve, reject) => {
     const cbName = '__fsCb_' + Date.now();
     const script = document.createElement('script');
@@ -1905,7 +1161,7 @@ function loadFile(file) {
     document.getElementById('previewArea').style.display = 'block';
     document.getElementById('btnScan').style.display = 'block';
     document.getElementById('results').style.display = 'none';
-    document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('actionBar').style.display = 'none'; document.getElementById('actionBar').classList.remove('visible');
     document.getElementById('batchSummary').style.display = 'none';
     document.getElementById('btnSaveAll').style.display = 'none';
     hide('errorBox');
@@ -2115,7 +1371,7 @@ function selectBatchRow(i, tr) {
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   // Update save button to save this specific invoice
-  document.getElementById('actionBar').style.display = 'flex';
+  document.getElementById('actionBar').style.display = 'flex'; document.getElementById('actionBar').classList.add('visible');
   document.getElementById('sheetsSaveStatus').textContent = '';
 }
 
@@ -2231,7 +1487,7 @@ async function scanInvoice() {
   document.getElementById('btnScan').disabled = true;
   show('loading'); hide('errorBox');
   document.getElementById('results').style.display = 'none';
-  document.getElementById('actionBar').style.display = 'none';
+  document.getElementById('actionBar').style.display = 'none'; document.getElementById('actionBar').classList.remove('visible');
   document.getElementById('loadingText').textContent = 'Analizando factura con IA...';
 
   const prompt = `Devuelve SOLO JSON valido, sin markdown ni texto extra.
@@ -2392,7 +1648,7 @@ function renderResults(d) {
   resultsEl.style.animation = 'none';
   resultsEl.offsetHeight; // trigger reflow
   resultsEl.style.animation = 'fadeIn 0.25s ease';
-  document.getElementById('actionBar').style.display = 'flex';
+  document.getElementById('actionBar').style.display = 'flex'; document.getElementById('actionBar').classList.add('visible');
   validateTotals(d);
   document.getElementById('sheetsSaveStatus').textContent = '';
 
@@ -2604,7 +1860,7 @@ function resetAll() {
   btnScan.style.marginTop = '';
   btnScan.onclick = scanInvoice;
   document.getElementById('results').style.display = 'none';
-  document.getElementById('actionBar').style.display = 'none';
+  document.getElementById('actionBar').style.display = 'none'; document.getElementById('actionBar').classList.remove('visible');
   document.getElementById('btnSheetsText').textContent = '📊 Guardar en Google Sheets';
   document.getElementById('btnSheets').style.background = '';
   document.getElementById('btnSheets').disabled = false;
@@ -2675,8 +1931,19 @@ function triggerFileInput() {
   const input = document.getElementById('fileInput');
   if (input) input.click();
 }
-function show(id) { document.getElementById(id).style.display = 'block'; }
-function hide(id) { document.getElementById(id).style.display = 'none'; }
+function show(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // sticky-bar and action-bar need flex
+  el.style.display = (id === 'actionBar') ? 'flex' : 'block';
+  if (id === 'actionBar') el.classList.add('visible');
+}
+function hide(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'none';
+  if (id === 'actionBar') el.classList.remove('visible');
+}
 function showError(msg) {
   const el = document.getElementById('errorBox');
   el.textContent = msg; el.style.display = 'block';
@@ -2690,6 +1957,71 @@ function setStatus(id, msg, type) {
 }
 
 // ── INIT ──
+
+// ── TAB SWITCHING ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['scan','setup'][i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach((p, i) => {
+    p.classList.toggle('active', ['tab-scan','tab-setup'][i] === 'tab-' + name);
+  });
+}
+
+// ── SHEETS INDICATOR ──
+function updateSheetsIndicator() {
+  const url  = getUrl();
+  const key  = getKey();
+  const both = url && key;
+  const dot    = document.getElementById('sheetsDot');
+  const status = document.getElementById('sheetsStatus');
+
+  if (url) {
+    dot.classList.add('on');
+    status.textContent = 'Conectado';
+    const btnSheets = document.getElementById('btnSheets');
+    if (btnSheets) btnSheets.disabled = false;
+  } else {
+    dot.classList.remove('on');
+    status.textContent = 'Sheets';
+    const btnSheets = document.getElementById('btnSheets');
+    if (btnSheets) btnSheets.disabled = true;
+  }
+
+  // Accordion: collapse when both credentials set
+  const bar     = document.getElementById('setupConnectedBar');
+  const details = document.getElementById('setupDetails');
+  if (bar && details) {
+    if (both) {
+      bar.classList.add('visible');
+      if (!details.dataset.userExpanded) {
+        details.classList.add('collapsed');
+        const editBtn = document.getElementById('setupEditBtn');
+        if (editBtn) editBtn.textContent = 'Editar ▾';
+      }
+    } else {
+      bar.classList.remove('visible');
+      details.classList.remove('collapsed');
+    }
+  }
+}
+
+function toggleSetupDetails() {
+  const details = document.getElementById('setupDetails');
+  const btn     = document.getElementById('setupEditBtn');
+  if (!details) return;
+  const isCollapsed = details.classList.contains('collapsed');
+  if (isCollapsed) {
+    details.classList.remove('collapsed');
+    if (btn) btn.textContent = 'Cerrar ▴';
+    details.dataset.userExpanded = 'yes';
+  } else {
+    details.classList.add('collapsed');
+    if (btn) btn.textContent = 'Editar ▾';
+    details.dataset.userExpanded = '';
+  }
+}
+
 window.onload = () => {
   const key = getKey();
   if (key) { document.getElementById('apiKeyInput').value = key; setStatus('keyStatus','✓ Clave cargada','ok'); }
@@ -2742,19 +2074,5 @@ window.onload = () => {
 };
 </script>
 
-<!-- CONFIRM MODAL -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Confirmar datos a guardar</div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div class="modal-body" id="modalBody"></div>
-    <div class="modal-footer">
-      <button class="btn-confirm" onclick="confirmSave()">📊 Confirmar y guardar en Sheets</button>
-      <button class="btn-cancel-modal" onclick="closeModal()">Cancelar</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
