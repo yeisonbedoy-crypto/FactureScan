@@ -1001,336 +1001,53 @@ tailwind.config = {
   <!-- ══ TAB SETUP ══ -->
   <div class="tab-panel" id="tab-setup">
 
-    <!-- Accordion connected bar -->
-    <div class="setup-connected-bar" id="setupConnectedBar" onclick="toggleSetupDetails()">
-      <div class="setup-conn-dot"></div>
-      <span class="setup-conn-label">✓ Configuración completa</span>
-      <span class="setup-conn-edit" id="setupEditBtn">Editar ▾</span>
+    <!-- Conexión y Seguridad -->
+    <div class="card" style="background:linear-gradient(135deg, #1a1f36 0%, #0f1419 100%);border:1px solid rgba(99,91,255,0.2);margin-bottom:2rem;">
+      <div class="card-header">
+        <div class="card-title" style="color:#a0aec0;">🔐 Conexión y Seguridad</div>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:1.5rem;">
+        
+        <!-- API Key Input -->
+        <div>
+          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.6rem;">Clave API Anthropic</label>
+          <div class="field-input-wrapper" style="background:#0f1419;border:1px solid #2d3748;border-radius:8px;padding:0.1rem;">
+            <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-…" style="background:transparent;border:none;color:#e2e8f0;padding:0.6rem 0.9rem;" />
+            <button class="toggle-password" onclick="togglePasswordVisibility('apiKeyInput',this)" title="Mostrar/Ocultar" style="color:#8792a2;right:0.65rem;">👁️</button>
+          </div>
+          <div class="hint" style="color:#718096;margin-top:0.4rem;">Obtén tu clave en <strong style="color:#cbd5e0;">console.anthropic.com → API Keys</strong></div>
+          <div class="status-msg" id="keyStatus" style="margin-top:0.35rem;"></div>
+        </div>
+
+        <!-- Google Sheets URL Input -->
+        <div>
+          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.6rem;">URL de Google Apps Script</label>
+          <div class="field-input-wrapper" style="background:#0f1419;border:1px solid #2d3748;border-radius:8px;padding:0.1rem;">
+            <input type="password" class="field-input" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" onchange="validateGasUrl()" oninput="validateGasUrl()" style="background:transparent;border:none;color:#e2e8f0;padding:0.6rem 0.9rem;" />
+            <button class="toggle-password" onclick="togglePasswordVisibility('sheetsUrlInput',this)" title="Mostrar/Ocultar" style="color:#8792a2;right:0.65rem;">👁️</button>
+          </div>
+          <div class="validation-hint" id="urlValidationHint"></div>
+          <div class="status-msg" id="urlStatus" style="margin-top:0.35rem;"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.5rem;">
+          <button onclick="saveConfig()" class="btn-primary" style="padding:0.75rem;font-size:0.85rem;">💾 Guardar</button>
+          <button onclick="testConnection()" class="btn-secondary" style="padding:0.75rem;font-size:0.85rem;">🔗 Probar</button>
+        </div>
+        <div class="status-msg" id="testStatus" style="margin-top:0.5rem;"></div>
+      </div>
     </div>
 
-    <div class="setup-details" id="setupDetails">
-
-      <div class="card">
-        <div class="card-header"><div class="card-title">Conectar con Google Sheets — 3 pasos</div></div>
-        <div class="card-body">
-          <div class="steps">
-
-            <div class="step">
-              <div class="step-num">1</div>
-              <div class="step-content">
-                <div class="step-title">Prepara tu hoja de Google Sheets</div>
-                <div class="step-desc">Ve a <a href="https://sheets.new" target="_blank">sheets.new</a> y crea una hoja nueva. En la <strong>primera fila</strong> añade estas cabeceras (una por columna, de A a Q):</div>
-                <div style="position:relative;">
-                  <div id="headersCode" style="background:#1a1f36;border-radius:8px;padding:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.35rem 1.25rem;">
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">A · fecha_escaneo</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">B · fecha</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">C · numero_factura</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">D · proveedor</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">E · nif_proveedor</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">F · concepto</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">G · base_imponible</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">H · tipo_impuesto</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">I · porcentaje_impuesto</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">J · cuota_impuesto</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">K · total</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">L · moneda</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">M · tipo_contable</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">N · forma_pago</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">O · cliente</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">P · nif_cliente</span>
-                    <span style="font-size:0.65rem;color:#7dd3fc;font-family:'Geist Mono',monospace;">Q · observaciones</span>
-                  </div>
-                  <button class="copy-code-btn" onclick="copyHeaders()">Copiar</button>
-                </div>
-                <div class="hint" style="margin-top:0.5rem;">Pega en celda A1 → <strong>Datos → Dividir texto en columnas</strong> (separador: tabulación).</div>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="step-num">2</div>
-              <div class="step-content">
-                <div class="step-title">Pega el script en Apps Script</div>
-                <div class="step-desc">En tu hoja → <strong>Extensiones → Apps Script</strong> → borra el código existente y pega este:</div>
-                <div style="position:relative;">
-                  <div class="code-block" id="appsScriptCode">function doGet(e) {
-  try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getActiveSheet();
-    var cb    = e.parameter.callback || '';
-    var action = e.parameter.action  || 'write';
-
-    // ── READ ACTION: return dashboard data ──
-    if (action === 'read') {
-      var lastRow = sheet.getLastRow();
-      if (lastRow < 2) {
-        var empty = JSON.stringify({status:'ok',mes:{total:0,impuestos:0,base:0,count:0},anual:{total:0,impuestos:0,base:0,count:0,devoluciones:0},recientes:[],meses:[]});
-        return ContentService.createTextOutput(cb ? cb+'('+empty+')' : empty)
-          .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
-      }
-
-      var now        = new Date();
-      var mesActual  = now.getMonth();
-      var anioActual = now.getFullYear();
-
-      // Parse filter dates
-      var dateFromStr = e.parameter.dateFrom || null;
-      var dateToStr   = e.parameter.dateTo   || null;
-      var dateFromObj = dateFromStr ? new Date(dateFromStr + 'T00:00:00Z') : null;
-      var dateToObj   = dateToStr   ? new Date(dateToStr   + 'T23:59:59Z') : null;
-
-      // Read all data columns: B=fecha(1), C=numero_factura(2), D=proveedor(3),
-      // G=base(6), J=cuota(9), K=total(10), M=tipo_contable(12)
-      var data = sheet.getRange(2, 1, lastRow - 1, 17).getValues();
-
-      var mes    = { total:0, impuestos:0, base:0, count:0 };
-      var anual  = { total:0, impuestos:0, base:0, count:0, devoluciones:0 };
-      var recientes = [];
-      var mesesMap  = {};
-
-      for (var i = 0; i < data.length; i++) {
-        var row    = data[i];
-        var fecha  = row[1]; // col B
-        var numFac = row[2]; // col C
-        var prov   = row[3]; // col D
-        var base   = parseFloat(row[6])  || 0; // col G
-        var cuota  = parseFloat(row[9])  || 0; // col J
-        var total  = parseFloat(row[10]) || 0; // col K
-        var tipo   = row[12] || '';             // col M
-
-        if (!fecha && !total) continue; // skip empty rows
-
-        // Parse date
-        var d = fecha instanceof Date ? fecha : new Date(fecha);
-        var rowMes  = d.getMonth ? d.getMonth()  : -1;
-        var rowAnio = d.getMonth ? d.getFullYear(): -1;
-
-        // Check if row is within date filter (if specified)
-        var withinDateRange = true;
-        if (dateFromObj && d < dateFromObj) withinDateRange = false;
-        if (dateToObj && d > dateToObj) withinDateRange = false;
-
-        // Annual totals (always calculate for KPIs)
-        if (rowAnio === anioActual) {
-          anual.count++;
-          if (total < 0) {
-            anual.devoluciones += Math.abs(total);
-          } else {
-            anual.total    += total;
-            anual.impuestos += cuota;
-            anual.base      += base;
-          }
-
-          // Monthly bar chart (last 6 months)
-          var mesKey = rowAnio + '-' + String(rowMes + 1).padStart(2,'0');
-          if (!mesesMap[mesKey]) mesesMap[mesKey] = 0;
-          mesesMap[mesKey] += total;
-        }
-
-        // Current month totals
-        if (rowMes === mesActual && rowAnio === anioActual && total >= 0) {
-          mes.count++;
-          mes.total    += total;
-          mes.impuestos += cuota;
-          mes.base      += base;
-        }
-
-        // Recent invoices - include ALL if filter is active, otherwise last 8
-        if (withinDateRange) {
-          recientes.push({
-            fecha: fecha instanceof Date ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') : String(fecha).substring(0,10),
-            proveedor: String(prov).substring(0,25),
-            numero: String(numFac),
-            tipo: String(tipo),
-            total: total
-          });
-        }
-      }
-
-      // If no date filter, limit to last 8; if filter active, return all matching
-      if (!dateFromStr && !dateToStr) {
-        recientes = recientes.slice(-8).reverse();
-      } else {
-        recientes = recientes.reverse(); // Just reverse, don't limit
-      }
-
-      // Build last 6 months array
-      var mesesArr = [];
-      for (var m = 5; m >= 0; m--) {
-        var d2  = new Date(anioActual, mesActual - m, 1);
-        var key = d2.getFullYear() + '-' + String(d2.getMonth()+1).padStart(2,'0');
-        var nombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        mesesArr.push({ mes: nombres[d2.getMonth()], total: mesesMap[key] || 0, isCurrent: m === 0 });
-      }
-
-      // Round all values
-      function r2(n) { return Math.round(n * 100) / 100; }
-      mes.total    = r2(mes.total);    mes.impuestos = r2(mes.impuestos);  mes.base = r2(mes.base);
-      anual.total  = r2(anual.total);  anual.impuestos = r2(anual.impuestos);
-      anual.base   = r2(anual.base);   anual.devoluciones = r2(anual.devoluciones);
-      anual.total  = r2(anual.total - anual.devoluciones); // net of returns
-
-      var result = JSON.stringify({status:'ok', mes:mes, anual:anual, recientes:recientes, meses:mesesArr});
-      return ContentService.createTextOutput(cb ? cb+'('+result+')' : result)
-        .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
-    }
-
-    // ── WRITE ACTION (default) ──
-    // Auto-headers si la hoja está vacía — nuevo orden
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        "fecha_escaneo","fecha","numero_factura",
-        "proveedor","nif_proveedor","concepto",
-        "base_imponible","tipo_impuesto","porcentaje_impuesto",
-        "cuota_impuesto","total","moneda",
-        "tipo_contable","forma_pago","cliente",
-        "nif_cliente","observaciones"
-      ]);
-    }
-
-    // Normaliza: elimina todo lo que no sea alfanumérico
-    function norm(s) {
-      return String(s || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    }
-
-    // DUPLICATE CHECK: numero_factura en Columna C (índice 3)
-    var numFacturaNorm = norm(e.parameter.numero_factura);
-    if (numFacturaNorm && sheet.getLastRow() > 1) {
-      var colC = sheet.getRange(2, 3, sheet.getLastRow() - 1, 1).getValues();
-      for (var i = 0; i < colC.length; i++) {
-        if (norm(colC[i][0]) === numFacturaNorm) {
-          var dupJson = JSON.stringify({status:"error", msg:"DUPLICATE"});
-          var dupOut  = cb ? cb + '(' + dupJson + ')' : dupJson;
-          return ContentService.createTextOutput(dupOut)
-            .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
-        }
-      }
-    }
-
-    function toNum(s) {
-      if (!s || s === '') return '';
-      var clean = String(s).trim();
-      if (clean.indexOf(',') > -1 && clean.indexOf('.') > -1) {
-        if (clean.lastIndexOf(',') > clean.lastIndexOf('.')) {
-          clean = clean.replace(/\./g,'').replace(',','.');
-        } else {
-          clean = clean.replace(/,/g,'');
-        }
-      } else {
-        clean = clean.replace(',','.');
-      }
-      var n = parseFloat(clean);
-      return isNaN(n) ? s : n;
-    }
-
-    var p = e.parameter;
-    sheet.appendRow([
-      p.fecha_escaneo          || new Date().toLocaleString("es-ES"), // A
-      p.fecha                  || "",                                  // B
-      p.numero_factura         || "",                                  // C
-      p.proveedor              || "",                                  // D
-      p.nif_proveedor          || "",                                  // E
-      p.concepto               || "",                                  // F
-      toNum(p.base_imponible),                                         // G
-      p.tipo_impuesto          || "",                                  // H
-      toNum(p.porcentaje_impuesto),                                    // I
-      toNum(p.cuota_impuesto),                                         // J
-      toNum(p.total),                                                  // K
-      p.moneda                 || "EUR",                               // L
-      p.tipo_contable          || "",                                  // M
-      p.forma_pago             || "",                                  // N
-      p.cliente                || "",                                  // O
-      p.nif_cliente            || "",                                  // P
-      p.observaciones          || ""                                   // Q
-    ]);
-
-    var json = JSON.stringify({status:"ok"});
-    var out  = cb ? cb + '(' + json + ')' : json;
-    return ContentService.createTextOutput(out)
-      .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
-
-  } catch(err) {
-    var json = JSON.stringify({status:"error", msg:err.message});
-    var out  = (e.parameter.callback || '') + '(' + json + ')';
-    return ContentService.createTextOutput(out)
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
-}</div>
-                  <button class="copy-code-btn" onclick="copyScript()">Copiar</button>
-                </div>
-                <div class="hint" style="margin-top:0.5rem;">Gratuito y sin límites — usa tu cuenta de Google.</div>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="step-num">3</div>
-              <div class="step-content">
-                <div class="step-title">Publica y pega la URL aquí</div>
-                <div class="step-desc">
-                  <strong>Implementar → Nueva implementación → Aplicación web</strong><br>
-                  Ejecutar como: <strong>Yo</strong> · Acceso: <strong>Cualquier usuario</strong><br>
-                  Si pide autorización → Configuración avanzada → Ir al proyecto → Permitir
-                </div>
-                <div class="field-group">
-                  <div class="field-input-wrapper">
-                    <input type="password" class="field-input" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" onchange="validateGasUrl()" oninput="validateGasUrl()" />
-                    <button class="toggle-password" onclick="togglePasswordVisibility('sheetsUrlInput',this)" title="Mostrar/Ocultar">👁️</button>
-                  </div>
-                  <div class="validation-hint" id="urlValidationHint"></div>
-                  <button class="btn-sm" onclick="saveUrl()" style="width:100%;margin-top:0.5rem;">Guardar</button>
-                </div>
-                <div class="hint">⚠ Crea una nueva implementación cada vez que modifiques el script.</div>
-                <div class="status-msg" id="urlStatus"></div>
-                <div style="margin-top:0.85rem;">
-                  <button class="btn-sm" onclick="testConnection()" style="width:100%;padding:0.7rem;text-align:center;">🔗 Probar conexión</button>
-                  <div class="status-msg" id="testStatus"></div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><div class="card-title">📌 Permisos de Google</div></div>
-        <div class="card-body">
-          <div class="hint" style="line-height:1.8;">Google puede mostrar <strong>"App no verificada"</strong> al autorizar. Es normal para scripts propios. Pulsa <strong>Configuración avanzada → Ir al proyecto → Permitir</strong>.</div>
-        </div>
-      </div>
-
-    </div><!-- /setup-details -->
-
-    <!-- Formulas -->
-    <div class="card">
-      <div class="card-header"><div class="card-title">📐 Fórmulas para totales en Sheets</div></div>
-      <div class="card-body" style="padding:0;">
-        <div class="formula-row">
-          <div class="field-label" style="margin-bottom:0.4rem;">Total IVA/IGIC</div>
-          <div style="position:relative;"><div class="code-block" id="formula1" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUMIF(M:M,"IVA/IGIC",K:K)</div><button class="copy-code-btn" onclick="copyFormula('formula1',this)">Copiar</button></div>
-        </div>
-        <div class="formula-row">
-          <div class="field-label" style="margin-bottom:0.4rem;">Total exentas</div>
-          <div style="position:relative;"><div class="code-block" id="formula2" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUMIF(M:M,"EXENTA",K:K)</div><button class="copy-code-btn" onclick="copyFormula('formula2',this)">Copiar</button></div>
-        </div>
-        <div class="formula-row">
-          <div class="field-label" style="margin-bottom:0.4rem;">Total general</div>
-          <div style="position:relative;"><div class="code-block" id="formula3" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUM(K2:K)</div><button class="copy-code-btn" onclick="copyFormula('formula3',this)">Copiar</button></div>
-        </div>
-        <div class="formula-row">
-          <div class="field-label" style="margin-bottom:0.4rem;">Total cuota impuesto</div>
-          <div style="position:relative;"><div class="code-block" id="formula4" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=SUM(J2:J)</div><button class="copy-code-btn" onclick="copyFormula('formula4',this)">Copiar</button></div>
-        </div>
-        <div class="formula-row">
-          <div class="field-label" style="margin-bottom:0.4rem;">Recuento facturas</div>
-          <div style="position:relative;"><div class="code-block" id="formula5" style="font-size:0.78rem;padding:0.6rem 1rem;white-space:nowrap;">=COUNTA(C2:C)</div><button class="copy-code-btn" onclick="copyFormula('formula5',this)">Copiar</button></div>
-        </div>
-      </div>
-      <div style="padding:0.85rem 1.25rem;border-top:1px solid #f0f3f8;font-size:0.72rem;color:#8792a2;line-height:1.7;">
-        💡 <strong style="color:#1a1f36;">Consejo:</strong> Crea una pestaña <strong style="color:#1a1f36;">"Resumen"</strong> en tu Sheets y pon ahí estas fórmulas apuntando a la hoja de datos.
-      </div>
+    <!-- Connection Status Footer -->
+    <div style="padding:1.25rem;background:white;border:1px solid #e6ebf1;border-radius:12px;display:flex;align-items:center;gap:0.75rem;">
+      <div id="statusDot" style="width:10px;height:10px;border-radius:50%;background:#cbd5e0;box-shadow:0 0 0 3px rgba(203,213,224,0.2);"></div>
+      <span id="statusLabel" style="font-size:0.82rem;font-weight:500;color:#718096;">No configurado</span>
+      <span id="statusTime" style="font-size:0.7rem;color:#a0aec0;margin-left:auto;"></span>
     </div>
 
   </div><!-- /tab-setup -->
+
   <!-- ══ TAB DASHBOARD ══ -->
   <div class="tab-panel" id="tab-dashboard">
 
@@ -2946,6 +2663,80 @@ function validateGasUrl() {
   }
 }
 
+// ── NEW SETUP TAB FUNCTIONS ──
+function saveConfig() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const url = document.getElementById('sheetsUrlInput').value.trim();
+  let valid = true;
+
+  // Validate key
+  if (key && !key.startsWith('sk-ant-')) {
+    setStatus('keyStatus', '⚠ Formato de clave inválido', 'err');
+    valid = false;
+  } else if (key) {
+    localStorage.setItem('factura_key', key);
+    setStatus('keyStatus', '✓ Guardado', 'ok');
+  }
+
+  // Validate URL
+  if (url && !url.startsWith('https://')) {
+    setStatus('urlStatus', '⚠ La URL debe empezar por https://', 'err');
+    valid = false;
+  } else if (url && !url.includes('script.google.com')) {
+    setStatus('urlStatus', '⚠ Debe ser de Google Apps Script', 'err');
+    valid = false;
+  } else if (url) {
+    localStorage.setItem('factura_sheets_url', url);
+    setStatus('urlStatus', '✓ Guardado', 'ok');
+  }
+
+  // Show notification and update status
+  if (valid && (key || url)) {
+    showNotification('✓ Configuración guardada');
+    updateSheetsIndicator();
+    updateConnectionStatus();
+  }
+}
+
+function updateConnectionStatus() {
+  const key = getKey();
+  const url = getUrl();
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('statusLabel');
+  const time = document.getElementById('statusTime');
+
+  if (key && url) {
+    dot.style.background = '#48bb78';
+    dot.style.boxShadow = '0 0 0 3px rgba(72,187,120,0.2)';
+    label.textContent = 'Estado: Conectado ✓';
+    label.style.color = '#22543d';
+    time.textContent = new Date().toLocaleTimeString('es-ES');
+  } else {
+    dot.style.background = '#cbd5e0';
+    dot.style.boxShadow = '0 0 0 3px rgba(203,213,224,0.2)';
+    label.textContent = key ? 'Estado: URL pendiente' : 'Estado: No configurado';
+    label.style.color = '#718096';
+    time.textContent = '';
+  }
+}
+
+function showNotification(message) {
+  const notif = document.createElement('div');
+  notif.textContent = message;
+  notif.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#22543d;color:#c6f6d5;padding:0.75rem 1.5rem;border-radius:8px;font-size:0.85rem;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:fadeInOut 2s ease-in-out forwards;';
+  
+  // Add animation keyframes if not present
+  if (!document.getElementById('notif-style')) {
+    const style = document.createElement('style');
+    style.id = 'notif-style';
+    style.textContent = '@keyframes fadeInOut { 0% { opacity:0;transform:translateX(-50%) translateY(10px); } 50% { opacity:1;transform:translateX(-50%) translateY(0); } 100% { opacity:0;transform:translateX(-50%) translateY(-10px); } }';
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 2000);
+}
+
 window.onload = () => {
   const key = getKey();
   if (key) { document.getElementById('apiKeyInput').value = key; setStatus('keyStatus','✓ Clave cargada','ok'); }
@@ -2957,6 +2748,7 @@ window.onload = () => {
   }
   updateSheetsIndicator();
   checkSetupComplete();
+  updateConnectionStatus();
 
   // Restore batch session if interrupted
   const savedBatch = sessionStorage.getItem('factura_batch');
@@ -3004,3 +2796,4 @@ window.onload = () => {
 
 </body>
 </html>
+
