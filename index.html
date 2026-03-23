@@ -2517,12 +2517,26 @@ async function resetChartFilter() {
 
 // ── TAB SWITCHING ──
 function switchTab(name) {
+  // Activar/desactivar botones
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['scan','dashboard','setup'][i] === name);
+    const tabNames = ['scan','dashboard','setup'];
+    if (tabNames[i] === name) {
+      t.classList.add('active');
+    } else {
+      t.classList.remove('active');
+    }
   });
+  
+  // Activar/desactivar paneles
   document.querySelectorAll('.tab-panel').forEach((p, i) => {
-    p.classList.toggle('active', ['tab-scan','tab-dashboard','tab-setup'][i] === 'tab-' + name);
+    const panelIds = ['tab-scan','tab-dashboard','tab-setup'];
+    if (panelIds[i] === 'tab-' + name) {
+      p.classList.add('active');
+    } else {
+      p.classList.remove('active');
+    }
   });
+  
   if (name === 'dashboard') loadDashboard();
 }
 
