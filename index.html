@@ -1063,6 +1063,12 @@ tailwind.config = {
       var mesActual  = now.getMonth();
       var anioActual = now.getFullYear();
 
+      // Parse filter dates
+      var dateFromStr = e.parameter.dateFrom || null;
+      var dateToStr   = e.parameter.dateTo   || null;
+      var dateFromObj = dateFromStr ? new Date(dateFromStr + 'T00:00:00Z') : null;
+      var dateToObj   = dateToStr   ? new Date(dateToStr   + 'T23:59:59Z') : null;
+
       // Read all data columns: B=fecha(1), C=numero_factura(2), D=proveedor(3),
       // G=base(6), J=cuota(9), K=total(10), M=tipo_contable(12)
       var data = sheet.getRange(2, 1, lastRow - 1, 17).getValues();
@@ -1089,7 +1095,12 @@ tailwind.config = {
         var rowMes  = d.getMonth ? d.getMonth()  : -1;
         var rowAnio = d.getMonth ? d.getFullYear(): -1;
 
-        // Annual totals
+        // Check if row is within date filter (if specified)
+        var withinDateRange = true;
+        if (dateFromObj && d < dateFromObj) withinDateRange = false;
+        if (dateToObj && d > dateToObj) withinDateRange = false;
+
+        // Annual totals (always calculate for KPIs)
         if (rowAnio === anioActual) {
           anual.count++;
           if (total < 0) {
@@ -1114,18 +1125,24 @@ tailwind.config = {
           mes.base      += base;
         }
 
-        // Recent invoices (last 8, most recent first)
-        recientes.push({
-          fecha: fecha instanceof Date ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') : String(fecha).substring(0,10),
-          proveedor: String(prov).substring(0,25),
-          numero: String(numFac),
-          tipo: String(tipo),
-          total: total
-        });
+        // Recent invoices - include ALL if filter is active, otherwise last 8
+        if (withinDateRange) {
+          recientes.push({
+            fecha: fecha instanceof Date ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') : String(fecha).substring(0,10),
+            proveedor: String(prov).substring(0,25),
+            numero: String(numFac),
+            tipo: String(tipo),
+            total: total
+          });
+        }
       }
 
-      // Sort recent by row order (last inserted = last row = most recent)
-      recientes = recientes.slice(-8).reverse();
+      // If no date filter, limit to last 8; if filter active, return all matching
+      if (!dateFromStr && !dateToStr) {
+        recientes = recientes.slice(-8).reverse();
+      } else {
+        recientes = recientes.reverse(); // Just reverse, don't limit
+      }
 
       // Build last 6 months array
       var mesesArr = [];
@@ -1365,6 +1382,30 @@ tailwind.config = {
           <div class="kpi-label">Base Imponible</div>
           <div class="kpi-value" style="background:#eff6ff;border-radius:6px;height:1.8rem;"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Chart Filters -->
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-header">
+        <div class="card-title">🔍 Filtro Temporal para Gráfico</div>
+      </div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;align-items:flex-end;">
+        <div>
+          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.4rem;">Desde</label>
+          <input type="date" id="chartDateFrom" class="field-input" style="font-size:0.85rem;" />
+        </div>
+        <div>
+          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.4rem;">Hasta</label>
+          <input type="date" id="chartDateTo" class="field-input" style="font-size:0.85rem;" />
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button onclick="applyChartFilter()" class="btn-primary" style="flex:1;padding:0.65rem;font-size:0.8rem;">Aplicar</button>
+          <button onclick="resetChartFilter()" class="btn-secondary" title="Limpiar filtro" style="padding:0.65rem 0.9rem;font-size:0.8rem;">✕</button>
+        </div>
+      </div>
+      <div style="padding:0 1.25rem 0.5rem;font-size:0.7rem;color:#8792a2;">
+        <span id="chartFilterInfo">Sin filtro aplicado</span>
       </div>
     </div>
 
@@ -2381,6 +2422,12 @@ async function loadDashboard() {
     return;
   }
 
+  // Limpiar filtros de gráfico al actualizar
+  document.getElementById('chartDateFrom').value = '';
+  document.getElementById('chartDateTo').value = '';
+  document.getElementById('chartFilterInfo').textContent = 'Sin filtro aplicado';
+  document.getElementById('chartFilterInfo').style.color = '#8792a2';
+
   const btn  = document.getElementById('btnRefresh');
   const icon = document.getElementById('refreshIcon');
   if (btn)  btn.disabled = true;
@@ -2405,7 +2452,7 @@ async function loadDashboard() {
   }
 }
 
-function fetchDashboardData(url) {
+function fetchDashboardData(url, dateFrom = null, dateTo = null) {
   return new Promise((resolve, reject) => {
     const cbName = '__dash_' + Date.now();
     const script = document.createElement('script');
@@ -2427,6 +2474,8 @@ function fetchDashboardData(url) {
     };
 
     const params = new URLSearchParams({ action: 'read', callback: cbName });
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
     script.src = url + '?' + params.toString();
     script.onerror = () => { cleanup(); reject(new Error('Error de red')); };
     document.head.appendChild(script);
@@ -2520,9 +2569,11 @@ function renderDashboard(data) {
 }
 
 let categoryChart = null;
+let currentChartData = null;
 
 function updateChart(data) {
   const { recientes } = data;
+  currentChartData = data; // Guardar para referencia
   
   // Contar facturas por tipo
   const typeCounts = {};
@@ -2590,16 +2641,95 @@ function updateChart(data) {
       const color = colors[i % colors.length];
       const amount = amounts[i];
       const count = typeCounts[label];
+      const pct = amounts.length > 0 ? ((amount / amounts.reduce((a, b) => a + b, 0)) * 100).toFixed(1) : 0;
       return `
         <div class="legend-item">
           <div class="legend-dot" style="background:${color};"></div>
           <div>
             <div style="font-weight:600;color:#1a1f36;">${label}</div>
-            <div class="legend-value">${fmt(amount)} (${count})</div>
+            <div class="legend-value">${fmt(amount)} (${count}) · ${pct}%</div>
           </div>
         </div>
       `;
     }).join('');
+  }
+}
+
+async function applyChartFilter() {
+  const dateFrom = document.getElementById('chartDateFrom').value;
+  const dateTo = document.getElementById('chartDateTo').value;
+  const url = getUrl();
+  
+  if (!url) {
+    alert('Configura la URL de Google Sheets primero');
+    return;
+  }
+  
+  if (!dateFrom && !dateTo) {
+    alert('Selecciona al menos una fecha');
+    return;
+  }
+  
+  // Validar que "Desde" no sea mayor que "Hasta"
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    alert('La fecha "Desde" no puede ser mayor que "Hasta"');
+    return;
+  }
+  
+  try {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '⏳ Cargando...';
+    
+    // Fetchear datos con filtro de fechas
+    const data = await fetchDashboardData(url, dateFrom, dateTo);
+    
+    // Actualizar gráfico con datos filtrados
+    updateChart(data);
+    
+    // Mostrar info del filtro aplicado
+    let filterInfo = '';
+    if (dateFrom && dateTo) {
+      filterInfo = `📅 Desde ${dateFrom} hasta ${dateTo}`;
+    } else if (dateFrom) {
+      filterInfo = `📅 Desde ${dateFrom} en adelante`;
+    } else {
+      filterInfo = `📅 Hasta ${dateTo}`;
+    }
+    filterInfo += ` · ${data.recientes?.length || 0} facturas`;
+    document.getElementById('chartFilterInfo').textContent = filterInfo;
+    document.getElementById('chartFilterInfo').style.color = '#059669';
+    
+    btn.textContent = 'Filtro Aplicado ✓';
+    setTimeout(() => {
+      btn.textContent = 'Aplicar';
+      btn.disabled = false;
+    }, 2000);
+    
+  } catch (e) {
+    alert('Error al aplicar filtro: ' + e.message);
+    const btn = event.target;
+    btn.disabled = false;
+    btn.textContent = 'Aplicar';
+  }
+}
+
+async function resetChartFilter() {
+  // Limpiar inputs
+  document.getElementById('chartDateFrom').value = '';
+  document.getElementById('chartDateTo').value = '';
+  document.getElementById('chartFilterInfo').textContent = 'Sin filtro aplicado';
+  document.getElementById('chartFilterInfo').style.color = '#8792a2';
+  
+  // Recargar dashboard sin filtros
+  const url = getUrl();
+  if (url) {
+    try {
+      const data = await fetchDashboardData(url);
+      updateChart(data);
+    } catch (e) {
+      console.error('Error al resetear filtro:', e);
+    }
   }
 }
 
