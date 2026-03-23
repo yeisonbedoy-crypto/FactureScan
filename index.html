@@ -805,13 +805,21 @@ tailwind.config = {
   @media (max-width: 600px) {
     .kpi-grid { grid-template-columns: 1fr 1fr; }
     .kpi-value { font-size: 1.35rem; }
+    /* Charts stack on mobile */
+    .card:has(#barChart), .chart-card { grid-column: 1 / -1; }
+    .chart-container { max-width: 240px; height: 240px; }
+    .category-legend { grid-template-columns: 1fr 1fr; }
+    .chart-container canvas { max-height: 200px !important; }
   }
 
   /* ── CHART & SECURITY ── */
   .chart-container {
     position: relative;
-    width: 100%; max-width: 280px; height: 280px;
-    margin: 0 auto 1rem;
+    width: 100%; max-width: 100%;
+    margin: 0 auto;
+  }
+  .chart-container canvas {
+    max-height: 300px !important;
   }
   .chart-card { background: white; border: 1px solid #e6ebf1; border-radius: 14px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   .chart-title { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8792a2; margin-bottom: 0.75rem; }
@@ -843,6 +851,7 @@ tailwind.config = {
   @media (max-width: 600px) {
     .chart-container { max-width: 240px; height: 240px; }
     .category-legend { grid-template-columns: 1fr 1fr; }
+    .chart-container canvas { max-height: 200px !important; }
   }
 
 </style>
@@ -1417,18 +1426,15 @@ tailwind.config = {
           <div class="card-title">Últimos 6 meses</div>
         </div>
         <div class="card-body">
-          <div class="bar-chart" id="barChart">
-            <div class="dash-empty" style="width:100%;">
-              <div class="dash-empty-icon">📊</div>
-              <div class="dash-empty-text">Sin datos</div>
-            </div>
+          <div class="chart-container" style="height:300px;">
+            <canvas id="barChart"></canvas>
           </div>
         </div>
       </div>
       <!-- Doughnut chart -->
       <div class="chart-card">
         <div class="chart-title">Desglose por tipo</div>
-        <div class="chart-container">
+        <div class="chart-container" style="max-width:280px;height:280px;margin:0 auto 1rem;">
           <canvas id="categoryChart"></canvas>
         </div>
         <div class="category-legend" id="categoryLegend"></div>
@@ -2536,15 +2542,7 @@ function renderDashboard(data) {
 
   // ── Bar chart ──
   if (meses && meses.length) {
-    const maxVal = Math.max(...meses.map(m => m.total), 1);
-    document.getElementById('barChart').innerHTML = meses.map(m => `
-      <div class="bar-col">
-        <div class="bar-fill ${m.isCurrent ? 'current' : ''}"
-             style="height:${Math.max(4, Math.round((m.total / maxVal) * 72))}px"
-             title="${fmt(m.total)}"></div>
-        <div class="bar-label">${m.mes}</div>
-      </div>
-    `).join('');
+    renderBarChart(meses);
   }
 
   // ── Recent invoices ──
@@ -2653,6 +2651,87 @@ function updateChart(data) {
       `;
     }).join('');
   }
+}
+
+let barChartInstance = null;
+
+function renderBarChart(meses) {
+  const ctx = document.getElementById('barChart');
+  if (!ctx) return;
+  
+  // Destruir gráfico anterior
+  if (barChartInstance) barChartInstance.destroy();
+  
+  const labels = meses.map(m => m.mes);
+  const data = meses.map(m => m.total);
+  const colors = meses.map(m => m.isCurrent ? '#09c97f' : '#635bff');
+  
+  barChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Gastos por mes',
+        data: data,
+        backgroundColor: colors,
+        borderColor: colors.map(c => c + 'dd'),
+        borderWidth: 2,
+        borderRadius: 6,
+        barThickness: 40,
+        hoverBackgroundColor: '#4f46e5'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'x',
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(26,31,54,0.9)',
+          padding: 12,
+          titleFont: { size: 13, weight: 'bold' },
+          bodyFont: { size: 12 },
+          borderColor: '#635bff',
+          borderWidth: 1,
+          borderRadius: 6,
+          callbacks: {
+            label: (ctx) => fmt(ctx.parsed.y)
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (val) => {
+              if (val === 0) return '0';
+              return val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val;
+            },
+            font: { size: 11 },
+            color: '#8792a2'
+          },
+          grid: {
+            color: '#f0f3f8',
+            drawBorder: false,
+            lineWidth: 1
+          }
+        },
+        x: {
+          ticks: {
+            font: { size: 11, weight: '500' },
+            color: '#1a1f36'
+          },
+          grid: {
+            display: false,
+            drawBorder: false
+          }
+        }
+      }
+    }
+  });
 }
 
 async function applyChartFilter() {
