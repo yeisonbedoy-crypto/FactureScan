@@ -6,6 +6,7 @@
 <title>FacturaScan</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 tailwind.config = {
   theme: {
@@ -806,6 +807,44 @@ tailwind.config = {
     .kpi-value { font-size: 1.35rem; }
   }
 
+  /* ── CHART & SECURITY ── */
+  .chart-container {
+    position: relative;
+    width: 100%; max-width: 280px; height: 280px;
+    margin: 0 auto 1rem;
+  }
+  .chart-card { background: white; border: 1px solid #e6ebf1; border-radius: 14px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .chart-title { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8792a2; margin-bottom: 0.75rem; }
+
+  .field-group { position: relative; margin-bottom: 1rem; }
+  .field-input-wrapper { position: relative; display: flex; align-items: center; }
+  .field-input-wrapper .field-input { flex: 1; padding-right: 2.5rem; }
+  .toggle-password {
+    position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none;
+    color: #8792a2; cursor: pointer; font-size: 1.1rem;
+    padding: 0.4rem; transition: color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .toggle-password:hover { color: #635bff; }
+
+  .url-error { border-color: #f87171 !important; box-shadow: 0 0 0 3px rgba(248,113,113,0.1) !important; background: #fff5f5; }
+  .url-valid { border-color: #34d399 !important; box-shadow: 0 0 0 3px rgba(52,211,153,0.1) !important; }
+
+  .validation-hint { font-size: 0.68rem; margin-top: 0.35rem; display: flex; align-items: center; gap: 0.3rem; line-height: 1.4; }
+  .validation-hint.error { color: #dc2626; }
+  .validation-hint.ok { color: #059669; }
+
+  .category-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.6rem; margin-top: 0.75rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-value { color: #1a1f36; font-weight: 500; }
+
+  @media (max-width: 600px) {
+    .chart-container { max-width: 240px; height: 240px; }
+    .category-legend { grid-template-columns: 1fr 1fr; }
+  }
+
 </style>
 </head>
 <body>
@@ -844,9 +883,12 @@ tailwind.config = {
     <!-- API Key -->
     <div class="api-mini">
       <div class="api-mini-title">🔑 Clave API Anthropic</div>
-      <div class="input-row">
-        <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-…" />
-        <button class="btn-sm" onclick="saveKey()">Guardar</button>
+      <div class="field-group">
+        <div class="field-input-wrapper">
+          <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-…" />
+          <button class="toggle-password" onclick="togglePasswordVisibility('apiKeyInput',this)" title="Mostrar/Ocultar">👁️</button>
+        </div>
+        <button class="btn-sm" onclick="saveKey()" style="width:100%;margin-top:0.5rem;">Guardar</button>
       </div>
       <div class="hint">Obtenla en <strong>console.anthropic.com</strong> → API Keys.</div>
       <div class="status-msg" id="keyStatus"></div>
@@ -1202,9 +1244,13 @@ tailwind.config = {
                   Ejecutar como: <strong>Yo</strong> · Acceso: <strong>Cualquier usuario</strong><br>
                   Si pide autorización → Configuración avanzada → Ir al proyecto → Permitir
                 </div>
-                <div class="input-row">
-                  <input type="text" class="field-input" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" />
-                  <button class="btn-sm" onclick="saveUrl()">Guardar</button>
+                <div class="field-group">
+                  <div class="field-input-wrapper">
+                    <input type="password" class="field-input" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" onchange="validateGasUrl()" oninput="validateGasUrl()" />
+                    <button class="toggle-password" onclick="togglePasswordVisibility('sheetsUrlInput',this)" title="Mostrar/Ocultar">👁️</button>
+                  </div>
+                  <div class="validation-hint" id="urlValidationHint"></div>
+                  <button class="btn-sm" onclick="saveUrl()" style="width:100%;margin-top:0.5rem;">Guardar</button>
                 </div>
                 <div class="hint">⚠ Crea una nueva implementación cada vez que modifiques el script.</div>
                 <div class="status-msg" id="urlStatus"></div>
@@ -1322,18 +1368,29 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- Monthly chart -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Gastos por mes (últimos 6 meses)</div>
-      </div>
-      <div class="card-body">
-        <div class="bar-chart" id="barChart">
-          <div class="dash-empty" style="width:100%;">
-            <div class="dash-empty-icon">📊</div>
-            <div class="dash-empty-text">Sin datos aún</div>
+    <!-- Charts Grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <!-- Monthly bar chart -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Últimos 6 meses</div>
+        </div>
+        <div class="card-body">
+          <div class="bar-chart" id="barChart">
+            <div class="dash-empty" style="width:100%;">
+              <div class="dash-empty-icon">📊</div>
+              <div class="dash-empty-text">Sin datos</div>
+            </div>
           </div>
         </div>
+      </div>
+      <!-- Doughnut chart -->
+      <div class="chart-card">
+        <div class="chart-title">Desglose por tipo</div>
+        <div class="chart-container">
+          <canvas id="categoryChart"></canvas>
+        </div>
+        <div class="category-legend" id="categoryLegend"></div>
       </div>
     </div>
 
@@ -2457,6 +2514,93 @@ function renderDashboard(data) {
     document.getElementById('recentBody').innerHTML =
       '<tr><td colspan="5" style="text-align:center;color:#c1c9d4;padding:1.5rem;font-size:0.78rem;">Sin facturas registradas aún</td></tr>';
   }
+
+  // ── Category chart (IVA vs EXENTA) ──
+  updateChart(data);
+}
+
+let categoryChart = null;
+
+function updateChart(data) {
+  const { recientes } = data;
+  
+  // Contar facturas por tipo
+  const typeCounts = {};
+  const typeAmounts = {};
+  
+  if (recientes && recientes.length) {
+    recientes.forEach(r => {
+      const tipo = r.tipo || 'Sin datos';
+      typeCounts[tipo] = (typeCounts[tipo] || 0) + 1;
+      typeAmounts[tipo] = (typeAmounts[tipo] || 0) + Math.abs(r.total || 0);
+    });
+  }
+  
+  const labels = Object.keys(typeCounts);
+  const amounts = Object.values(typeAmounts);
+  
+  // Paleta Fintech: Esmeralda, Azul, Índigo, Gris
+  const colors = [
+    '#10b981', // Esmeralda
+    '#3b82f6', // Azul
+    '#6366f1', // Índigo
+    '#8b5cf6'  // Púrpura
+  ];
+  const borderColors = colors.map(c => c + 'dd');
+  
+  const ctx = document.getElementById('categoryChart');
+  if (!ctx) return;
+  
+  // Destruir gráfico anterior si existe
+  if (categoryChart) categoryChart.destroy();
+  
+  categoryChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: amounts,
+        backgroundColor: colors.slice(0, labels.length),
+        borderColor: borderColors.slice(0, labels.length),
+        borderWidth: 2,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const val = ctx.parsed;
+              return fmt(val);
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Renderizar leyenda personalizada
+  const legend = document.getElementById('categoryLegend');
+  if (legend) {
+    legend.innerHTML = labels.map((label, i) => {
+      const color = colors[i % colors.length];
+      const amount = amounts[i];
+      const count = typeCounts[label];
+      return `
+        <div class="legend-item">
+          <div class="legend-dot" style="background:${color};"></div>
+          <div>
+            <div style="font-weight:600;color:#1a1f36;">${label}</div>
+            <div class="legend-value">${fmt(amount)} (${count})</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 // ── TAB SWITCHING ──
@@ -2543,16 +2687,65 @@ function saveUrl() {
     setStatus('urlStatus', '⚠ La URL debe empezar por https://', 'err');
     return;
   }
+  if (!val.includes('script.google.com')) {
+    setStatus('urlStatus', '⚠ La URL debe ser de Google Apps Script (script.google.com)', 'err');
+    return;
+  }
   localStorage.setItem('factura_sheets_url', val);
   setStatus('urlStatus', '✓ URL guardada', 'ok');
   updateSheetsIndicator();
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  btn.style.color = isPassword ? '#635bff' : '#8792a2';
+}
+
+function validateGasUrl() {
+  const val = document.getElementById('sheetsUrlInput').value.trim();
+  const hint = document.getElementById('urlValidationHint');
+  const input = document.getElementById('sheetsUrlInput');
+  
+  if (!val) {
+    hint.textContent = '';
+    input.classList.remove('url-error', 'url-valid');
+    return;
+  }
+  
+  const isHttps = val.startsWith('https://');
+  const isGoogle = val.includes('script.google.com');
+  
+  if (!isHttps) {
+    hint.innerHTML = '⚠ Debe ser HTTPS para seguridad';
+    hint.classList.remove('ok');
+    hint.classList.add('error');
+    input.classList.add('url-error');
+  } else if (!isGoogle) {
+    hint.innerHTML = '⚠ Debe ser de script.google.com';
+    hint.classList.remove('ok');
+    hint.classList.add('error');
+    input.classList.add('url-error');
+  } else {
+    hint.innerHTML = '✓ URL válida';
+    hint.classList.remove('error');
+    hint.classList.add('ok');
+    input.classList.remove('url-error');
+    input.classList.add('url-valid');
+  }
 }
 
 window.onload = () => {
   const key = getKey();
   if (key) { document.getElementById('apiKeyInput').value = key; setStatus('keyStatus','✓ Clave cargada','ok'); }
   const url = getUrl();
-  if (url) { document.getElementById('sheetsUrlInput').value = url; setStatus('urlStatus','✓ URL cargada','ok'); }
+  if (url) { 
+    document.getElementById('sheetsUrlInput').value = url;
+    setStatus('urlStatus','✓ URL cargada','ok');
+    validateGasUrl();
+  }
   updateSheetsIndicator();
   checkSetupComplete();
 
