@@ -671,6 +671,141 @@ tailwind.config = {
   @media (max-width: 380px) {
     .fields-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── DASHBOARD ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.85rem;
+  }
+  .kpi-card {
+    background: white;
+    border: 1px solid #e6ebf1;
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: box-shadow 0.15s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.09); transform: translateY(-2px); }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.purple::before { background: linear-gradient(90deg,#635bff,#8b5cf6); }
+  .kpi-card.green::before  { background: linear-gradient(90deg,#09c97f,#34d399); }
+  .kpi-card.blue::before   { background: linear-gradient(90deg,#3b82f6,#60a5fa); }
+  .kpi-card.orange::before { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
+  .kpi-card.red::before    { background: linear-gradient(90deg,#ef4444,#f87171); }
+
+  .kpi-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    margin-bottom: 0.85rem;
+  }
+  .kpi-icon.purple { background: #f0f0ff; }
+  .kpi-icon.green  { background: #ecfdf5; }
+  .kpi-icon.blue   { background: #eff6ff; }
+  .kpi-icon.orange { background: #fffbeb; }
+  .kpi-icon.red    { background: #fff5f5; }
+
+  .kpi-label {
+    font-size: 0.68rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: #8792a2; margin-bottom: 0.35rem;
+  }
+  .kpi-value {
+    font-family: 'Fraunces', serif;
+    font-size: 1.65rem; font-weight: 700;
+    color: #1a1f36; line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .kpi-value.negative { color: #ef4444; }
+  .kpi-sub {
+    font-size: 0.68rem; color: #8792a2; font-weight: 500;
+  }
+  .kpi-delta {
+    display: inline-flex; align-items: center; gap: 0.2rem;
+    font-size: 0.65rem; font-weight: 600;
+    padding: 0.15rem 0.45rem; border-radius: 99px;
+  }
+  .kpi-delta.up   { background: #ecfdf5; color: #059669; }
+  .kpi-delta.down { background: #fff5f5; color: #dc2626; }
+
+  .dash-section-title {
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: #8792a2; margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  /* Recent invoices mini-table */
+  .recent-table { width: 100%; border-collapse: collapse; }
+  .recent-table th {
+    font-size: 0.6rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: #8792a2; text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #f0f3f8;
+    background: #f6f9fc;
+  }
+  .recent-table td {
+    font-size: 0.75rem; color: #1a1f36;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid #f6f9fc;
+    max-width: 130px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .recent-table tr:last-child td { border-bottom: none; }
+  .recent-table .amount { font-family: 'Fraunces', serif; font-weight: 700; color: #635bff; }
+  .recent-table .amount.neg { color: #ef4444; }
+
+  /* Refresh button */
+  .btn-refresh {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    background: white; border: 1.5px solid #e6ebf1;
+    border-radius: 8px; cursor: pointer;
+    font-family: 'Inter',sans-serif; font-size: 0.75rem; font-weight: 500;
+    color: #3c4257; transition: all 0.15s;
+  }
+  .btn-refresh:hover { border-color: #635bff; color: #635bff; }
+  .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+  .spin { display: inline-block; transition: transform 0.5s; }
+  .spin.spinning { animation: spin360 0.8s linear infinite; }
+  @keyframes spin360 { to { transform: rotate(360deg); } }
+  @keyframes pulse2 { 0%,100%{opacity:0.4} 50%{opacity:0.7} }
+
+  /* Month bar chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 0.35rem; height: 80px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+  .bar-fill {
+    width: 100%; border-radius: 4px 4px 0 0;
+    background: linear-gradient(180deg, #635bff, #8b5cf6);
+    min-height: 3px;
+    transition: height 0.6s ease;
+  }
+  .bar-fill.current { background: linear-gradient(180deg, #09c97f, #34d399); }
+  .bar-label { font-size: 0.55rem; color: #8792a2; font-weight: 500; }
+
+  .dash-empty {
+    text-align: center; padding: 2.5rem 1rem;
+    color: #8792a2;
+  }
+  .dash-empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .dash-empty-text { font-size: 0.82rem; font-weight: 500; }
+  .dash-empty-sub  { font-size: 0.72rem; margin-top: 0.3rem; }
+
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-value { font-size: 1.35rem; }
+  }
+
 </style>
 </head>
 <body>
@@ -700,6 +835,7 @@ tailwind.config = {
   <div class="tabs" role="tablist">
     <button class="tab active" onclick="switchTab('scan')">📄 Escanear</button>
     <button class="tab" onclick="switchTab('setup')">⚙ Configuración</button>
+    <button class="tab" onclick="switchTab('dashboard')">📊 Dashboard</button>
   </div>
 
   <!-- ══ TAB SCAN ══ -->
@@ -870,7 +1006,107 @@ tailwind.config = {
     var ss    = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getActiveSheet();
     var cb    = e.parameter.callback || '';
+    var action = e.parameter.action  || 'write';
 
+    // ── READ ACTION: return dashboard data ──
+    if (action === 'read') {
+      var lastRow = sheet.getLastRow();
+      if (lastRow < 2) {
+        var empty = JSON.stringify({status:'ok',mes:{total:0,impuestos:0,base:0,count:0},anual:{total:0,impuestos:0,base:0,count:0,devoluciones:0},recientes:[],meses:[]});
+        return ContentService.createTextOutput(cb ? cb+'('+empty+')' : empty)
+          .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
+      }
+
+      var now        = new Date();
+      var mesActual  = now.getMonth();
+      var anioActual = now.getFullYear();
+
+      // Read all data columns: B=fecha(1), C=numero_factura(2), D=proveedor(3),
+      // G=base(6), J=cuota(9), K=total(10), M=tipo_contable(12)
+      var data = sheet.getRange(2, 1, lastRow - 1, 17).getValues();
+
+      var mes    = { total:0, impuestos:0, base:0, count:0 };
+      var anual  = { total:0, impuestos:0, base:0, count:0, devoluciones:0 };
+      var recientes = [];
+      var mesesMap  = {};
+
+      for (var i = 0; i < data.length; i++) {
+        var row    = data[i];
+        var fecha  = row[1]; // col B
+        var numFac = row[2]; // col C
+        var prov   = row[3]; // col D
+        var base   = parseFloat(row[6])  || 0; // col G
+        var cuota  = parseFloat(row[9])  || 0; // col J
+        var total  = parseFloat(row[10]) || 0; // col K
+        var tipo   = row[12] || '';             // col M
+
+        if (!fecha && !total) continue; // skip empty rows
+
+        // Parse date
+        var d = fecha instanceof Date ? fecha : new Date(fecha);
+        var rowMes  = d.getMonth ? d.getMonth()  : -1;
+        var rowAnio = d.getMonth ? d.getFullYear(): -1;
+
+        // Annual totals
+        if (rowAnio === anioActual) {
+          anual.count++;
+          if (total < 0) {
+            anual.devoluciones += Math.abs(total);
+          } else {
+            anual.total    += total;
+            anual.impuestos += cuota;
+            anual.base      += base;
+          }
+
+          // Monthly bar chart (last 6 months)
+          var mesKey = rowAnio + '-' + String(rowMes + 1).padStart(2,'0');
+          if (!mesesMap[mesKey]) mesesMap[mesKey] = 0;
+          mesesMap[mesKey] += total;
+        }
+
+        // Current month totals
+        if (rowMes === mesActual && rowAnio === anioActual && total >= 0) {
+          mes.count++;
+          mes.total    += total;
+          mes.impuestos += cuota;
+          mes.base      += base;
+        }
+
+        // Recent invoices (last 8, most recent first)
+        recientes.push({
+          fecha: fecha instanceof Date ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') : String(fecha).substring(0,10),
+          proveedor: String(prov).substring(0,25),
+          numero: String(numFac),
+          tipo: String(tipo),
+          total: total
+        });
+      }
+
+      // Sort recent by row order (last inserted = last row = most recent)
+      recientes = recientes.slice(-8).reverse();
+
+      // Build last 6 months array
+      var mesesArr = [];
+      for (var m = 5; m >= 0; m--) {
+        var d2  = new Date(anioActual, mesActual - m, 1);
+        var key = d2.getFullYear() + '-' + String(d2.getMonth()+1).padStart(2,'0');
+        var nombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        mesesArr.push({ mes: nombres[d2.getMonth()], total: mesesMap[key] || 0, isCurrent: m === 0 });
+      }
+
+      // Round all values
+      function r2(n) { return Math.round(n * 100) / 100; }
+      mes.total    = r2(mes.total);    mes.impuestos = r2(mes.impuestos);  mes.base = r2(mes.base);
+      anual.total  = r2(anual.total);  anual.impuestos = r2(anual.impuestos);
+      anual.base   = r2(anual.base);   anual.devoluciones = r2(anual.devoluciones);
+      anual.total  = r2(anual.total - anual.devoluciones); // net of returns
+
+      var result = JSON.stringify({status:'ok', mes:mes, anual:anual, recientes:recientes, meses:mesesArr});
+      return ContentService.createTextOutput(cb ? cb+'('+result+')' : result)
+        .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
+    }
+
+    // ── WRITE ACTION (default) ──
     // Auto-headers si la hoja está vacía — nuevo orden
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
@@ -888,23 +1124,20 @@ tailwind.config = {
       return String(s || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     }
 
-    // ── DUPLICATE CHECK: numero_factura en Columna C (índice 3) ──
+    // DUPLICATE CHECK: numero_factura en Columna C (índice 3)
     var numFacturaNorm = norm(e.parameter.numero_factura);
-
     if (numFacturaNorm && sheet.getLastRow() > 1) {
       var colC = sheet.getRange(2, 3, sheet.getLastRow() - 1, 1).getValues();
       for (var i = 0; i < colC.length; i++) {
         if (norm(colC[i][0]) === numFacturaNorm) {
           var dupJson = JSON.stringify({status:"error", msg:"DUPLICATE"});
           var dupOut  = cb ? cb + '(' + dupJson + ')' : dupJson;
-          return ContentService
-            .createTextOutput(dupOut)
+          return ContentService.createTextOutput(dupOut)
             .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
         }
       }
     }
 
-    // Convierte texto de importe a número (maneja . y , como separadores)
     function toNum(s) {
       if (!s || s === '') return '';
       var clean = String(s).trim();
@@ -922,7 +1155,6 @@ tailwind.config = {
     }
 
     var p = e.parameter;
-    // appendRow en el nuevo orden: A-Q
     sheet.appendRow([
       p.fecha_escaneo          || new Date().toLocaleString("es-ES"), // A
       p.fecha                  || "",                                  // B
@@ -945,15 +1177,13 @@ tailwind.config = {
 
     var json = JSON.stringify({status:"ok"});
     var out  = cb ? cb + '(' + json + ')' : json;
-    return ContentService
-      .createTextOutput(out)
+    return ContentService.createTextOutput(out)
       .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
 
   } catch(err) {
     var json = JSON.stringify({status:"error", msg:err.message});
     var out  = (e.parameter.callback || '') + '(' + json + ')';
-    return ContentService
-      .createTextOutput(out)
+    return ContentService.createTextOutput(out)
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
 }</div>
@@ -1029,6 +1259,103 @@ tailwind.config = {
     </div>
 
   </div><!-- /tab-setup -->
+  <!-- ══ TAB DASHBOARD ══ -->
+  <div class="tab-panel" id="tab-dashboard">
+
+    <!-- Header row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:#1a1f36;">Dashboard</div>
+        <div style="font-size:0.72rem;color:#8792a2;margin-top:0.15rem;" id="dashSubtitle">Cargando datos…</div>
+      </div>
+      <button class="btn-refresh" id="btnRefresh" onclick="loadDashboard()">
+        <span class="spin" id="refreshIcon">↻</span>
+        Actualizar
+      </button>
+    </div>
+
+    <!-- Error state -->
+    <div id="dashError" style="display:none;" class="error-box"></div>
+
+    <!-- KPI Cards -->
+    <div>
+      <div class="dash-section-title">📅 Mes actual</div>
+      <div class="kpi-grid" id="kpiGrid">
+        <!-- Loading skeleton -->
+        <div class="kpi-card purple" style="opacity:0.4;animation:pulse2 1.2s ease-in-out infinite;">
+          <div class="kpi-icon purple">💶</div>
+          <div class="kpi-label">Total Gastos</div>
+          <div class="kpi-value" style="background:#f0f0ff;border-radius:6px;height:1.8rem;"></div>
+        </div>
+        <div class="kpi-card green" style="opacity:0.4;animation:pulse2 1.2s ease-in-out infinite;animation-delay:0.15s;">
+          <div class="kpi-icon green">🧾</div>
+          <div class="kpi-label">IVA/IGIC</div>
+          <div class="kpi-value" style="background:#ecfdf5;border-radius:6px;height:1.8rem;"></div>
+        </div>
+        <div class="kpi-card blue" style="opacity:0.4;animation:pulse2 1.2s ease-in-out infinite;animation-delay:0.3s;">
+          <div class="kpi-icon blue">📄</div>
+          <div class="kpi-label">Nº Facturas</div>
+          <div class="kpi-value" style="background:#eff6ff;border-radius:6px;height:1.8rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annual KPIs -->
+    <div>
+      <div class="dash-section-title">📆 Acumulado anual</div>
+      <div class="kpi-grid" id="kpiAnnual">
+        <div class="kpi-card purple" style="opacity:0.4;animation:pulse2 1.2s ease-in-out infinite;">
+          <div class="kpi-icon purple">💰</div>
+          <div class="kpi-label">Total Año</div>
+          <div class="kpi-value" style="background:#f0f0ff;border-radius:6px;height:1.8rem;"></div>
+        </div>
+        <div class="kpi-card orange" style="opacity:0.4;animation:pulse2 1.2s ease-in-out infinite;animation-delay:0.15s;">
+          <div class="kpi-icon orange">↩</div>
+          <div class="kpi-label">Devoluciones</div>
+          <div class="kpi-value" style="background:#fffbeb;border-radius:6px;height:1.8rem;"></div>
+        </div>
+        <div class="kpi-card blue" style="opacity:0.4;animation:pulse2 1.2s ease-in-out infinite;animation-delay:0.3s;">
+          <div class="kpi-icon blue">📊</div>
+          <div class="kpi-label">Base Imponible</div>
+          <div class="kpi-value" style="background:#eff6ff;border-radius:6px;height:1.8rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Gastos por mes (últimos 6 meses)</div>
+      </div>
+      <div class="card-body">
+        <div class="bar-chart" id="barChart">
+          <div class="dash-empty" style="width:100%;">
+            <div class="dash-empty-icon">📊</div>
+            <div class="dash-empty-text">Sin datos aún</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent invoices -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Últimas facturas</div>
+        <div style="font-size:0.68rem;color:#8792a2;" id="recentCount"></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="recent-table">
+          <thead><tr>
+            <th>Fecha</th><th>Proveedor</th><th>Nº Factura</th><th>Tipo</th><th>Total</th>
+          </tr></thead>
+          <tbody id="recentBody">
+            <tr><td colspan="5" style="text-align:center;color:#c1c9d4;padding:1.5rem;font-size:0.78rem;">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /tab-dashboard -->
 
 </div><!-- /main -->
 
@@ -1985,14 +2312,162 @@ function setStatus(id, msg, type) {
 
 // ── INIT ──
 
+
+// ── DASHBOARD ──
+let dashLoaded = false;
+
+async function loadDashboard() {
+  const url = getUrl();
+  if (!url) {
+    document.getElementById('dashError').style.display = 'block';
+    document.getElementById('dashError').textContent = '⚠ Configura la URL de Google Sheets en ⚙ Configuración primero.';
+    return;
+  }
+
+  const btn  = document.getElementById('btnRefresh');
+  const icon = document.getElementById('refreshIcon');
+  if (btn)  btn.disabled = true;
+  if (icon) icon.classList.add('spinning');
+  document.getElementById('dashError').style.display = 'none';
+
+  try {
+    const data = await fetchDashboardData(url);
+    renderDashboard(data);
+    dashLoaded = true;
+    const now = new Date();
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    document.getElementById('dashSubtitle').textContent =
+      `Actualizado · ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})} · ${meses[now.getMonth()]} ${now.getFullYear()}`;
+  } catch(e) {
+    document.getElementById('dashError').style.display = 'block';
+    document.getElementById('dashError').textContent = '⚠ Error cargando datos: ' + e.message;
+    document.getElementById('dashSubtitle').textContent = 'Error al cargar';
+  } finally {
+    if (btn)  btn.disabled = false;
+    if (icon) icon.classList.remove('spinning');
+  }
+}
+
+function fetchDashboardData(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = '__dash_' + Date.now();
+    const script = document.createElement('script');
+    const timer  = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timeout — Apps Script no respondió'));
+    }, 12000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(response) {
+      cleanup();
+      if (response && response.status === 'ok') resolve(response);
+      else reject(new Error((response && response.msg) || 'Respuesta vacía'));
+    };
+
+    const params = new URLSearchParams({ action: 'read', callback: cbName });
+    script.src = url + '?' + params.toString();
+    script.onerror = () => { cleanup(); reject(new Error('Error de red')); };
+    document.head.appendChild(script);
+  });
+}
+
+function fmt(n) {
+  return new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' €';
+}
+
+function renderDashboard(data) {
+  const { mes, anual, recientes, meses } = data;
+
+  // ── Monthly KPIs ──
+  const isNegMes = mes.total < 0;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card purple">
+      <div class="kpi-icon purple">💶</div>
+      <div class="kpi-label">Total Gastos Mes</div>
+      <div class="kpi-value ${isNegMes ? 'negative' : ''}">${fmt(mes.total)}</div>
+      <div class="kpi-sub">${mes.count} factura${mes.count !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon green">🧾</div>
+      <div class="kpi-label">IVA/IGIC a Deducir</div>
+      <div class="kpi-value">${fmt(mes.impuestos)}</div>
+      <div class="kpi-sub">Este mes</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-icon blue">📄</div>
+      <div class="kpi-label">Nº Facturas</div>
+      <div class="kpi-value">${mes.count}</div>
+      <div class="kpi-sub">Mes actual</div>
+    </div>
+  `;
+
+  // ── Annual KPIs ──
+  document.getElementById('kpiAnnual').innerHTML = `
+    <div class="kpi-card purple">
+      <div class="kpi-icon purple">💰</div>
+      <div class="kpi-label">Total Neto Año</div>
+      <div class="kpi-value ${anual.total < 0 ? 'negative' : ''}">${fmt(anual.total)}</div>
+      <div class="kpi-sub">${anual.count} facturas</div>
+    </div>
+    <div class="kpi-card ${anual.devoluciones > 0 ? 'red' : 'orange'}">
+      <div class="kpi-icon ${anual.devoluciones > 0 ? 'red' : 'orange'}">↩</div>
+      <div class="kpi-label">Devoluciones</div>
+      <div class="kpi-value ${anual.devoluciones > 0 ? 'negative' : ''}">${anual.devoluciones > 0 ? '-' : ''}${fmt(anual.devoluciones)}</div>
+      <div class="kpi-sub">${anual.devoluciones > 0 ? 'Restadas del total' : 'Sin devoluciones'}</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-icon blue">📊</div>
+      <div class="kpi-label">Base Imponible Año</div>
+      <div class="kpi-value">${fmt(anual.base)}</div>
+      <div class="kpi-sub">Sin impuestos</div>
+    </div>
+  `;
+
+  // ── Bar chart ──
+  if (meses && meses.length) {
+    const maxVal = Math.max(...meses.map(m => m.total), 1);
+    document.getElementById('barChart').innerHTML = meses.map(m => `
+      <div class="bar-col">
+        <div class="bar-fill ${m.isCurrent ? 'current' : ''}"
+             style="height:${Math.max(4, Math.round((m.total / maxVal) * 72))}px"
+             title="${fmt(m.total)}"></div>
+        <div class="bar-label">${m.mes}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Recent invoices ──
+  if (recientes && recientes.length) {
+    document.getElementById('recentCount').textContent = `Últimas ${recientes.length}`;
+    document.getElementById('recentBody').innerHTML = recientes.map(r => `
+      <tr>
+        <td style="color:#8792a2;">${r.fecha}</td>
+        <td title="${r.proveedor}">${r.proveedor}</td>
+        <td style="font-family:'Geist Mono',monospace;font-size:0.7rem;">${r.numero}</td>
+        <td><span class="type-badge ${r.tipo === 'EXENTA' ? 'type-exenta' : 'type-iva'}">${r.tipo || '—'}</span></td>
+        <td class="amount ${r.total < 0 ? 'neg' : ''}">${fmt(r.total)}</td>
+      </tr>
+    `).join('');
+  } else {
+    document.getElementById('recentBody').innerHTML =
+      '<tr><td colspan="5" style="text-align:center;color:#c1c9d4;padding:1.5rem;font-size:0.78rem;">Sin facturas registradas aún</td></tr>';
+  }
+}
+
 // ── TAB SWITCHING ──
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['scan','setup'][i] === name);
+    t.classList.toggle('active', ['scan','setup','dashboard'][i] === name);
   });
   document.querySelectorAll('.tab-panel').forEach((p, i) => {
-    p.classList.toggle('active', ['tab-scan','tab-setup'][i] === 'tab-' + name);
+    p.classList.toggle('active', ['tab-scan','tab-setup','tab-dashboard'][i] === 'tab-' + name);
   });
+  if (name === 'dashboard') loadDashboard();
 }
 
 // ── SHEETS INDICATOR ──
