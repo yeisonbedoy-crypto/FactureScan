@@ -882,26 +882,12 @@ tailwind.config = {
   <!-- TABS -->
   <div class="tabs" role="tablist">
     <button class="tab active" onclick="switchTab('scan')">📄 Escanear</button>
-    <button class="tab" onclick="switchTab('setup')">⚙ Configuración</button>
     <button class="tab" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab" onclick="switchTab('setup')">⚙ Configuración</button>
   </div>
 
   <!-- ══ TAB SCAN ══ -->
   <div class="tab-panel active" id="tab-scan">
-
-    <!-- API Key -->
-    <div class="api-mini">
-      <div class="api-mini-title">🔑 Clave API Anthropic</div>
-      <div class="field-group">
-        <div class="field-input-wrapper">
-          <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-…" />
-          <button class="toggle-password" onclick="togglePasswordVisibility('apiKeyInput',this)" title="Mostrar/Ocultar">👁️</button>
-        </div>
-        <button class="btn-sm" onclick="saveKey()" style="width:100%;margin-top:0.5rem;">Guardar</button>
-      </div>
-      <div class="hint">Obtenla en <strong>console.anthropic.com</strong> → API Keys.</div>
-      <div class="status-msg" id="keyStatus"></div>
-    </div>
 
     <!-- Restore notice -->
     <div id="restoreNotice">
@@ -997,56 +983,6 @@ tailwind.config = {
 
     <div class="scan-tab-spacer"></div>
   </div>
-
-  <!-- ══ TAB SETUP ══ -->
-  <div class="tab-panel" id="tab-setup">
-
-    <!-- Conexión y Seguridad -->
-    <div class="card" style="background:linear-gradient(135deg, #1a1f36 0%, #0f1419 100%);border:1px solid rgba(99,91,255,0.2);margin-bottom:2rem;">
-      <div class="card-header">
-        <div class="card-title" style="color:#a0aec0;">🔐 Conexión y Seguridad</div>
-      </div>
-      <div class="card-body" style="display:flex;flex-direction:column;gap:1.5rem;">
-        
-        <!-- API Key Input -->
-        <div>
-          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.6rem;">Clave API Anthropic</label>
-          <div class="field-input-wrapper" style="background:#0f1419;border:1px solid #2d3748;border-radius:8px;padding:0.1rem;">
-            <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-…" style="background:transparent;border:none;color:#e2e8f0;padding:0.6rem 0.9rem;" />
-            <button class="toggle-password" onclick="togglePasswordVisibility('apiKeyInput',this)" title="Mostrar/Ocultar" style="color:#8792a2;right:0.65rem;">👁️</button>
-          </div>
-          <div class="hint" style="color:#718096;margin-top:0.4rem;">Obtén tu clave en <strong style="color:#cbd5e0;">console.anthropic.com → API Keys</strong></div>
-          <div class="status-msg" id="keyStatus" style="margin-top:0.35rem;"></div>
-        </div>
-
-        <!-- Google Sheets URL Input -->
-        <div>
-          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.6rem;">URL de Google Apps Script</label>
-          <div class="field-input-wrapper" style="background:#0f1419;border:1px solid #2d3748;border-radius:8px;padding:0.1rem;">
-            <input type="password" class="field-input" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" onchange="validateGasUrl()" oninput="validateGasUrl()" style="background:transparent;border:none;color:#e2e8f0;padding:0.6rem 0.9rem;" />
-            <button class="toggle-password" onclick="togglePasswordVisibility('sheetsUrlInput',this)" title="Mostrar/Ocultar" style="color:#8792a2;right:0.65rem;">👁️</button>
-          </div>
-          <div class="validation-hint" id="urlValidationHint"></div>
-          <div class="status-msg" id="urlStatus" style="margin-top:0.35rem;"></div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.5rem;">
-          <button onclick="saveConfig()" class="btn-primary" style="padding:0.75rem;font-size:0.85rem;">💾 Guardar</button>
-          <button onclick="testConnection()" class="btn-secondary" style="padding:0.75rem;font-size:0.85rem;">🔗 Probar</button>
-        </div>
-        <div class="status-msg" id="testStatus" style="margin-top:0.5rem;"></div>
-      </div>
-    </div>
-
-    <!-- Connection Status Footer -->
-    <div style="padding:1.25rem;background:white;border:1px solid #e6ebf1;border-radius:12px;display:flex;align-items:center;gap:0.75rem;">
-      <div id="statusDot" style="width:10px;height:10px;border-radius:50%;background:#cbd5e0;box-shadow:0 0 0 3px rgba(203,213,224,0.2);"></div>
-      <span id="statusLabel" style="font-size:0.82rem;font-weight:500;color:#718096;">No configurado</span>
-      <span id="statusTime" style="font-size:0.7rem;color:#a0aec0;margin-left:auto;"></span>
-    </div>
-
-  </div><!-- /tab-setup -->
 
   <!-- ══ TAB DASHBOARD ══ -->
   <div class="tab-panel" id="tab-dashboard">
@@ -1177,6 +1113,56 @@ tailwind.config = {
     </div>
 
   </div><!-- /tab-dashboard -->
+
+  <!-- ══ TAB SETUP ══ -->
+  <div class="tab-panel" id="tab-setup">
+
+    <!-- Conexión y Seguridad -->
+    <div class="card" style="background:linear-gradient(135deg, #1a1f36 0%, #0f1419 100%);border:1px solid rgba(99,91,255,0.2);margin-bottom:2rem;">
+      <div class="card-header">
+        <div class="card-title" style="color:#a0aec0;">🔐 Conexión y Seguridad</div>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:1.5rem;">
+        
+        <!-- API Key Input -->
+        <div>
+          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.6rem;">Clave API Anthropic</label>
+          <div class="field-input-wrapper" style="background:#0f1419;border:1px solid #2d3748;border-radius:8px;padding:0.1rem;">
+            <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-api03-…" style="background:transparent;border:none;color:#e2e8f0;padding:0.6rem 0.9rem;" />
+            <button class="toggle-password" onclick="togglePasswordVisibility('apiKeyInput',this)" title="Mostrar/Ocultar" style="color:#8792a2;right:0.65rem;">👁️</button>
+          </div>
+          <div class="hint" style="color:#718096;margin-top:0.4rem;">Obtén tu clave en <strong style="color:#cbd5e0;">console.anthropic.com → API Keys</strong></div>
+          <div class="status-msg" id="keyStatus" style="margin-top:0.35rem;"></div>
+        </div>
+
+        <!-- Google Sheets URL Input -->
+        <div>
+          <label style="font-size:0.7rem;font-weight:600;color:#8792a2;text-transform:uppercase;display:block;margin-bottom:0.6rem;">URL de Google Apps Script</label>
+          <div class="field-input-wrapper" style="background:#0f1419;border:1px solid #2d3748;border-radius:8px;padding:0.1rem;">
+            <input type="password" class="field-input" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/…/exec" onchange="validateGasUrl()" oninput="validateGasUrl()" style="background:transparent;border:none;color:#e2e8f0;padding:0.6rem 0.9rem;" />
+            <button class="toggle-password" onclick="togglePasswordVisibility('sheetsUrlInput',this)" title="Mostrar/Ocultar" style="color:#8792a2;right:0.65rem;">👁️</button>
+          </div>
+          <div class="validation-hint" id="urlValidationHint"></div>
+          <div class="status-msg" id="urlStatus" style="margin-top:0.35rem;"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.5rem;">
+          <button onclick="saveConfig()" class="btn-primary" style="padding:0.75rem;font-size:0.85rem;">💾 Guardar</button>
+          <button onclick="testConnection()" class="btn-secondary" style="padding:0.75rem;font-size:0.85rem;">🔗 Probar</button>
+        </div>
+        <div class="status-msg" id="testStatus" style="margin-top:0.5rem;"></div>
+      </div>
+    </div>
+
+    <!-- Connection Status Footer -->
+    <div style="padding:1.25rem;background:white;border:1px solid #e6ebf1;border-radius:12px;display:flex;align-items:center;gap:0.75rem;">
+      <div id="statusDot" style="width:10px;height:10px;border-radius:50%;background:#cbd5e0;box-shadow:0 0 0 3px rgba(203,213,224,0.2);"></div>
+      <span id="statusLabel" style="font-size:0.82rem;font-weight:500;color:#718096;">No configurado</span>
+      <span id="statusTime" style="font-size:0.7rem;color:#a0aec0;margin-left:auto;"></span>
+    </div>
+
+  </div><!-- /tab-setup -->
 
 </div><!-- /main -->
 
@@ -2535,7 +2521,7 @@ function switchTab(name) {
     t.classList.toggle('active', ['scan','setup','dashboard'][i] === name);
   });
   document.querySelectorAll('.tab-panel').forEach((p, i) => {
-    p.classList.toggle('active', ['tab-scan','tab-setup','tab-dashboard'][i] === 'tab-' + name);
+    p.classList.toggle('active', ['tab-scan','tab-dashboard','tab-setup'][i] === 'tab-' + name);
   });
   if (name === 'dashboard') loadDashboard();
 }
