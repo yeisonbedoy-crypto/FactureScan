@@ -2518,7 +2518,7 @@ async function resetChartFilter() {
 // ── TAB SWITCHING ──
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['scan','setup','dashboard'][i] === name);
+    t.classList.toggle('active', ['scan','dashboard','setup'][i] === name);
   });
   document.querySelectorAll('.tab-panel').forEach((p, i) => {
     p.classList.toggle('active', ['tab-scan','tab-dashboard','tab-setup'][i] === 'tab-' + name);
